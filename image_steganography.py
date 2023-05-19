@@ -16,7 +16,7 @@ def to_bin(data):
     else:
         raise TypeError("Type not supported.")
   
-def encode(image_name, secret_data):
+def encode(image_name, secret_data, lsb_bits):
     # read the image
     image = cv2.imread(image_name)
     # maximum bytes to encode
@@ -38,23 +38,35 @@ def encode(image_name, secret_data):
             r, g, b = to_bin(pixel)
             # modify the least significant bit only if there is still data to store
             if data_index < data_len:
+                data = ""
+                for i in range(lsb_bits):
+                    data += binary_secret_data[data_index]
+                    data_index += 1
+                pixel[0] = int(r[:-lsb_bits] + data, 2)
                 # least significant red pixel bit
-                pixel[0] = int(r[:-2] + binary_secret_data[data_index] + binary_secret_data[data_index + 1], 2)
-                data_index += 2
+
             if data_index < data_len:
+                data = ""
+                for i in range(lsb_bits):
+                    data += binary_secret_data[data_index]
+                    data_index += 1
+                pixel[1] = int(g[:-lsb_bits] + data, 2)
+
                 # least significant green pixel bit
-                pixel[1] = int(g[:-2] + binary_secret_data[data_index] + binary_secret_data[data_index + 1], 2)
-                data_index += 2
             if data_index < data_len:
+                data = ""
+                for i in range(lsb_bits):
+                    data += binary_secret_data[data_index]
+                    data_index += 1
+                pixel[2] = int(b[:-lsb_bits] + data, 2)
                 # least significant blue pixel bit
-                pixel[2] = int(b[:-2] + binary_secret_data[data_index] + binary_secret_data[data_index + 1], 2)
-                data_index += 2
+
             # if data is encoded, just break out of the loop
             if data_index >= data_len:
                 break
     return image
   
-def decode(image_name):
+def decode(image_name, lsb_bits):
     print("[+] Decoding...")
     # read the image
     image = cv2.imread(image_name)
@@ -62,9 +74,9 @@ def decode(image_name):
     for row in image:
         for pixel in row:
             r, g, b = to_bin(pixel)
-            binary_data += r[-2]
-            binary_data += g[-2]
-            binary_data += b[-2]
+            binary_data += r[-lsb_bits:]
+            binary_data += g[-lsb_bits:]
+            binary_data += b[-lsb_bits:]
     # split by 8-bits
     all_bytes = [ binary_data[i: i+8] for i in range(0, len(binary_data), 8) ]
     # convert from bits to characters
@@ -78,11 +90,11 @@ def decode(image_name):
 if __name__ == "__main__":
     input_image = "test.PNG"
     output_image = "encoded_image.PNG"
-    secret_data = "This is a top secret message."
+    secret_data = "This is a top secret message...."
     # encode the data into the image
-    encoded_image = encode(image_name=input_image, secret_data=secret_data)
+    encoded_image = encode(image_name=input_image, secret_data=secret_data, lsb_bits = 2)
     # save the output image (encoded image)
     cv2.imwrite(output_image, encoded_image)
     # decode the secret data from the image
-    decoded_data = decode(output_image)
+    decoded_data = decode(output_image, lsb_bits = 2)
     print("[+] Decoded data:", decoded_data)
