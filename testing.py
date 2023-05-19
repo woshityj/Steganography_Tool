@@ -39,16 +39,16 @@ def encode(image_name, secret_data):
             # modify the least significant bit only if there is still data to store
             if data_index < data_len:
                 # least significant red pixel bit
-                pixel[0] = int(r[:-1] + binary_secret_data[data_index], 2)
-                data_index += 1
+                pixel[0] = int(r[:-2] + binary_secret_data[data_index] + binary_secret_data[data_index + 1], 2)
+                data_index += 2
             if data_index < data_len:
                 # least significant green pixel bit
-                pixel[1] = int(g[:-1] + binary_secret_data[data_index], 2)
-                data_index += 1
+                pixel[1] = int(g[:-2] + binary_secret_data[data_index] + binary_secret_data[data_index + 1], 2)
+                data_index += 2
             if data_index < data_len:
                 # least significant blue pixel bit
-                pixel[2] = int(b[:-1] + binary_secret_data[data_index], 2)
-                data_index += 1
+                pixel[2] = int(b[:-2] + binary_secret_data[data_index] + binary_secret_data[data_index + 1], 2)
+                data_index += 2
             # if data is encoded, just break out of the loop
             if data_index >= data_len:
                 break
@@ -62,9 +62,9 @@ def decode(image_name):
     for row in image:
         for pixel in row:
             r, g, b = to_bin(pixel)
-            binary_data += r[-1]
-            binary_data += g[-1]
-            binary_data += b[-1]
+            binary_data += r[-2]
+            binary_data += g[-2]
+            binary_data += b[-2]
     # split by 8-bits
     all_bytes = [ binary_data[i: i+8] for i in range(0, len(binary_data), 8) ]
     # convert from bits to characters
