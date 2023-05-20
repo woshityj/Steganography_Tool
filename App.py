@@ -11,23 +11,25 @@ class MyApp:
         self.encoded = None
         self.data_string = None
         self.root = TkinterDnD.Tk()
-        self.root.title('Encode')
+        self.root.title('LSB Steganography')
 
         # frame for input
         self.f_input = tk.Frame(self.root)
-        self.f_input.pack()
+        self.f_input.pack(padx=10, pady=10)
 
         # input text box for entering secret
         self.lbl_secret = tk.Label(self.f_input, text='Secret message: ')
-        self.lbl_secret.grid(row=0, column=0, sticky='e')
-        self.tb_message = tk.Text(self.f_input, height=1, width=40)
-        self.tb_message.grid(row=0, column=1)
+        self.lbl_secret.grid(row=0, column=0, sticky='ne')
+        self.tb_message = tk.Text(self.f_input, height=2, width=40)
+        self.tb_message.grid(row=0, column=1, sticky='w')
 
         # specify number of LSB
         self.lbl_num = tk.Label(self.f_input, text='Number of bits: ')
         self.lbl_num.grid(row=1, column=0, sticky='e')
-        self.tb_num = tk.Text(self.f_input, height=1, width=40)
-        self.tb_num.grid(row=1, column=1)
+        # self.tb_num = tk.Text(self.f_input, height=1, width=40)
+        # self.tb_num.grid(row=1, column=1)
+        self.sb_num = tk.Spinbox(self.f_input, from_=1, to=3, width=10)
+        self.sb_num.grid(row=1, column=1, sticky='w')
 
         self.lbl_DND = tk.Label(self.root, text='Drag and Drop Files Here', width=50, height=5)
         self.lbl_DND.pack()
@@ -41,12 +43,6 @@ class MyApp:
         self.binary_content = None
 
     def drop(self, event):
-        # check if number of bits specified
-        try:
-            num = int(self.tb_num.get("1.0", 'end-1c'))
-        except ValueError:
-            tk.Label(tk.Toplevel(self.root), text="Please specify the number of bits!", height=5, width=40).pack()
-
         file_path = event.data
         if os.path.isfile(file_path):
             _, ext = os.path.splitext(file_path)  # ext is the extension name
@@ -58,7 +54,7 @@ class MyApp:
             if message != "":
                 # if the file is image:
                 if ext.lower() in ['.png']:
-                    self.encoded = ims.encode(file_path, message, num)
+                    self.encoded = ims.encode(file_path, message, self.sb_num.get())
                 # if the file is text:
                 elif ext.lower() in ['.txt']:
                     pass
@@ -74,7 +70,7 @@ class MyApp:
             else:
                 # if the file is image:
                 if ext.lower() in ['.png']:
-                    self.tb_message.insert("1.0", ims.decode(file_path, num))
+                    self.tb_message.insert("1.0", ims.decode(file_path, self.sb_num.get()))
                 # if the file is text:
                 elif ext.lower() in ['.txt']:
                     pass
@@ -84,15 +80,23 @@ class MyApp:
                 else:
                     tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
                     return
+        else:
+            tk.Label(tk.Toplevel(self.root), text=f"File path {file_path} not supported. Try to use "
+                                                  f"local file.",
+                     height=5, width=50, justify='left', wraplength=350).pack(anchor='w', padx=10, pady=10)
 
     def run(self):
         self.root.mainloop()
 
     def save_as(self, ext):
+        # save as prompt
         filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
         if filename:
             if filename.endswith(('.png', '.jpg', '.jpeg')):
+                # save image
                 cv2.imwrite(filename, self.encoded)
+                # show image as per requested in spec
+                cv2.imshow(filename, self.encoded)
 
 
 app = MyApp()
