@@ -54,7 +54,7 @@ class MyApp:
             if message != "":
                 # if the file is image:
                 if ext.lower() in ['.png']:
-                    self.encoded = ims.encode(file_path, message, self.sb_num.get())
+                    self.encoded = ims.encode(file_path, message, int(self.sb_num.get()))
                 # if the file is text:
                 elif ext.lower() in ['.txt']:
                     pass
@@ -70,7 +70,7 @@ class MyApp:
             else:
                 # if the file is image:
                 if ext.lower() in ['.png']:
-                    self.tb_message.insert("1.0", ims.decode(file_path, self.sb_num.get()))
+                    self.tb_message.insert("1.0", ims.decode(file_path, int(self.sb_num.get())))
                 # if the file is text:
                 elif ext.lower() in ['.txt']:
                     pass
