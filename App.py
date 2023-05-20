@@ -1,10 +1,10 @@
 import os
 import tkinter as tk
-from tkinter.filedialog import asksaveasfilename
-
-import cv2
 from tkinterdnd2 import DND_FILES, TkinterDnD
+from tkinter.filedialog import asksaveasfilename
+import cv2
 import image_steganography as ims
+
 
 class MyApp:
     def __init__(self):
@@ -16,7 +16,6 @@ class MyApp:
         # frame for input
         self.f_input = tk.Frame(self.root)
         self.f_input.pack()
-
 
         # input text box for entering secret
         self.lbl_secret = tk.Label(self.f_input, text='Secret message: ')
@@ -42,21 +41,49 @@ class MyApp:
         self.binary_content = None
 
     def drop(self, event):
+        # check if number of bits specified
+        try:
+            num = int(self.tb_num.get("1.0", 'end-1c'))
+        except ValueError:
+            tk.Label(tk.Toplevel(self.root), text="Please specify the number of bits!", height=5, width=40).pack()
+
         file_path = event.data
         if os.path.isfile(file_path):
-            _, ext = os.path.splitext(file_path)
-            if ext.lower() in ['.png']:  # Can specify more types here
-                self.encoded = ims.encode(file_path, self.tb_message.get("1.0", 'end-1c'), int(self.tb_num.get("1.0", 'end-1c')))
-                self.save_as(ext)
-                #with open(file_path, 'rb') as file:
-                #    self.binary_content = file.read()
-                #    self.text_area.insert('1.0', str(self.binary_content))
-            else:
-                print(f"File type {ext} not supported.")
+            _, ext = os.path.splitext(file_path)  # ext is the extension name
 
-    def encode_image(self):
-        # use self.binary_content as the raw data to perform LSB
-        pass
+            # determine to encode or decode
+            # by checking whether the message text box is empty
+            # if tb_message is not empty, do encode:
+            message = self.tb_message.get("1.0", 'end-1c')
+            if message != "":
+                # if the file is image:
+                if ext.lower() in ['.png']:
+                    self.encoded = ims.encode(file_path, message, num)
+                # if the file is text:
+                elif ext.lower() in ['.txt']:
+                    pass
+                # if the file is audio:
+                elif ext.lower() in ['.mp3']:
+                    pass
+                else:
+                    tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
+                    return
+
+                self.save_as(ext)
+            # if tb_message is empty, do decode:
+            else:
+                # if the file is image:
+                if ext.lower() in ['.png']:
+                    self.tb_message.insert("1.0", ims.decode(file_path, num))
+                # if the file is text:
+                elif ext.lower() in ['.txt']:
+                    pass
+                # if the file is audio:
+                elif ext.lower() in ['.mp3']:
+                    pass
+                else:
+                    tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
+                    return
 
     def run(self):
         self.root.mainloop()
