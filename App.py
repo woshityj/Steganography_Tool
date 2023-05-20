@@ -13,17 +13,22 @@ class MyApp:
         self.root = TkinterDnD.Tk()
         self.root.title('Encode')
 
+        # frame for input
+        self.f_input = tk.Frame(self.root)
+        self.f_input.pack()
+
+
         # input text box for entering secret
-        self.lbl_secret = tk.Label(self.root, text='Enter secret', width=50, height=1)
-        self.lbl_secret.pack()
-        self.tb_message = tk.Text(self.root, height=1, width=50)
-        self.tb_message.pack()
+        self.lbl_secret = tk.Label(self.f_input, text='Secret message: ')
+        self.lbl_secret.grid(row=0, column=0, sticky='e')
+        self.tb_message = tk.Text(self.f_input, height=1, width=40)
+        self.tb_message.grid(row=0, column=1)
 
         # specify number of LSB
-        self.lbl_num = tk.Label(self.root, text='Enter number of bits', width=50, height=1)
-        self.lbl_num.pack()
-        self.tb_num = tk.Text(self.root, height=1, width=50)
-        self.tb_num.pack()
+        self.lbl_num = tk.Label(self.f_input, text='Number of bits: ')
+        self.lbl_num.grid(row=1, column=0, sticky='e')
+        self.tb_num = tk.Text(self.f_input, height=1, width=40)
+        self.tb_num.grid(row=1, column=1)
 
         self.lbl_DND = tk.Label(self.root, text='Drag and Drop Files Here', width=50, height=5)
         self.lbl_DND.pack()
