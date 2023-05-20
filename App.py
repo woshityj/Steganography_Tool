@@ -5,6 +5,8 @@ from tkinter.filedialog import asksaveasfilename
 import cv2
 import image_steganography as ims
 
+ERROR_UNSUPPORTED_TYPE = "File type {ext} not supported."
+ERROR_UNSUPPORTED_PATH = "File path {file_path} not supported. Try to use local file."
 
 class MyApp:
     def __init__(self):
@@ -12,6 +14,7 @@ class MyApp:
         self.data_string = None
         self.root = TkinterDnD.Tk()
         self.root.title('LSB Steganography')
+        self.root.resizable(0, 0)
 
         # frame for input
         self.f_input = tk.Frame(self.root)
@@ -20,22 +23,17 @@ class MyApp:
         # input text box for entering secret
         self.lbl_secret = tk.Label(self.f_input, text='Secret message: ')
         self.lbl_secret.grid(row=0, column=0, sticky='ne')
-        self.tb_message = tk.Text(self.f_input, height=2, width=40)
+        self.tb_message = tk.Text(self.f_input, height=2, width=30)
         self.tb_message.grid(row=0, column=1, sticky='w')
 
         # specify number of LSB
         self.lbl_num = tk.Label(self.f_input, text='Number of bits: ')
         self.lbl_num.grid(row=1, column=0, sticky='e')
-        # self.tb_num = tk.Text(self.f_input, height=1, width=40)
-        # self.tb_num.grid(row=1, column=1)
         self.sb_num = tk.Spinbox(self.f_input, from_=1, to=3, width=10)
         self.sb_num.grid(row=1, column=1, sticky='w')
 
-        self.lbl_DND = tk.Label(self.root, text='Drag and Drop Files Here', width=50, height=5)
-        self.lbl_DND.pack()
-
-        # self.tb_debug = tk.Text(self.root, width=50, height=20)
-        # self.tb_debug.pack()
+        self.lbl_DND = tk.Label(self.root, text='Drag and Drop Files Here', width=50, height=5, bg="#c8cfdb")
+        self.lbl_DND.pack(pady=10, padx=10)
 
         self.lbl_DND.drop_target_register(DND_FILES)
         self.lbl_DND.dnd_bind('<<Drop>>', self.drop)
@@ -62,7 +60,7 @@ class MyApp:
                 elif ext.lower() in ['.mp3']:
                     pass
                 else:
-                    tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
+                    tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_TYPE, height=5, width=40).pack()
                     return
 
                 self.save_as(ext)
@@ -81,8 +79,7 @@ class MyApp:
                     tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
                     return
         else:
-            tk.Label(tk.Toplevel(self.root), text=f"File path {file_path} not supported. Try to use "
-                                                  f"local file.",
+            tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_PATH,
                      height=5, width=50, justify='left', wraplength=350).pack(anchor='w', padx=10, pady=10)
 
     def run(self):
