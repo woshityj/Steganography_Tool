@@ -1,21 +1,30 @@
 import os
 import tkinter as tk
-from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar
+from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar, IntVar, Checkbutton
 from tkinterdnd2 import DND_FILES, Tk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import cv2
 
-supported_types = (
-    '.png',
-    '.gif',
-    '.bmp',
-    '.wav',
-    '.mp3',
-    '.mp4',
-    '.txt',
-    '.xls',
-    '.doc'
-)
+
+def test1(path):
+    print('encode png at', path)
+
+
+def test2(path):
+    print('decode png')
+
+
+supported_types = {
+    '.png': (test1, test2),
+    '.gif': None,
+    '.bmp': None,
+    '.wav': None,
+    '.mp3': None,
+    '.mp4': None,
+    '.txt': None,
+    '.xls': None,
+    '.doc': None
+}
 
 
 def get_path(filetype):
@@ -36,7 +45,7 @@ def get_drop(event, filetype):
         messagebox.showerror("Error", f"Cannot open file from {file_path}")
         return
 
-    if ext.lower() not in filetype:
+    if ext.lower() not in list(filetype):
         messagebox.showerror("Error", f"File type {ext} not supported.")
         return
     return file_path
@@ -58,6 +67,8 @@ class app:
         # frame
         self.rootFrame = Frame(self.root)
         self.settingFrame = Frame(self.rootFrame)
+        self.settingSubFrame1 = Frame(self.settingFrame)
+        self.settingSubFrame2 = Frame(self.settingFrame)
         self.payloadFrame = Frame(self.rootFrame)
         self.coverFrame = Frame(self.rootFrame)
         self.actionFrame = Frame(self.rootFrame)
@@ -70,6 +81,8 @@ class app:
 
         self.rootFrame.pack(padx=10, pady=10)
         self.settingFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
+        self.settingSubFrame1.grid(row=1, column=0, sticky='w')
+        self.settingSubFrame2.grid(row=2, column=0, sticky='w')
         self.payloadFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
         self.coverFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
         self.actionFrame.pack(padx=(0, 10), pady=(0, 10))
@@ -80,12 +93,12 @@ class app:
 
         # setting frame
         Label(self.settingFrame, text="Settings", font=('Aria', 10)).grid(row=0, column=0, sticky='w')
-        # self.ckbSaveOptionVar = IntVar()
-        # Checkbutton(self.settingFrame, text="Show files after execution",
-        #             variable=self.ckbSaveOptionVar).grid(row=1, column=0, sticky='w')
-        Label(self.settingFrame, text="Password:").grid(row=2, column=0, sticky='w')
-        txt_password = Text(self.settingFrame, height=1, width=72)
-        txt_password.grid(row=2, column=1, sticky='w')
+        self.ckbSaveOptionVar = IntVar()
+        Checkbutton(self.settingSubFrame1, text="Save decoded text",
+                    variable=self.ckbSaveOptionVar).grid(row=0, column=0, sticky='w')
+        Label(self.settingSubFrame2, text="Password:").grid(row=0, column=0, sticky='w')
+        txt_password = Text(self.settingSubFrame2, height=1, width=72)
+        txt_password.grid(row=0, column=1, sticky='w')
 
         # payload frame
         Label(self.payloadFrame, text="Payload", font=('Aria', 10)).grid(row=0, column=0, sticky='w')
@@ -111,7 +124,7 @@ class app:
             self.show_payload()
 
     def payload_on_drop(self, event):
-        self.payloadPath = get_drop(event, '.txt')
+        self.payloadPath = get_drop(event, {'.txt'})
         if self.payloadPath is not None:
             self.show_payload()
 
@@ -133,10 +146,15 @@ class app:
         os.startfile(self.coverPath)
 
     def encode(self):
-        pass
+        if self.coverPath is None:
+            messagebox.showerror("Please select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        supported_types[ext.lower()][0](self.coverPath)
 
     def decode(self):
-        pass
+        _, ext = os.path.splitext(self.coverPath)
+        supported_types[ext.lower()][1]()
 
     def run(self):
         self.root.mainloop()
