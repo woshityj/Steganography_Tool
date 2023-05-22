@@ -1,7 +1,6 @@
 import cv2  
 import numpy as np  
 
-
 # converting types to binary  
 def to_bin(data):
     """Convert `data` to binary format as string"""
@@ -94,14 +93,15 @@ def decode(image_name, lsb_bits):
             break
     return decoded_data[:-5]
 
-if __name__ == "__main__":
-    input_image = "test.PNG"
-    output_image = "encoded_image.PNG"
-    secret_data = "This is a top secret message....."
-    # encode the data into the image
-    encoded_image = encode(image_name=input_image, secret_data=secret_data, lsb_bits = 1)
-    # save the output image (encoded image)
-    cv2.imwrite(output_image, encoded_image)
-    # decode the secret data from the image
-    decoded_data = decode(output_image, lsb_bits = 1)
-    print("[+] Decoded data:", decoded_data)
+# Deprecated code
+# if __name__ == "__main__":
+#     input_image = "test.PNG"
+#     output_image = "encoded_image.PNG"
+#     secret_data = "This is a top secret message....."
+#     # encode the data into the image
+#     encoded_image = encode(image_name=input_image, secret_data=secret_data, lsb_bits = 1)
+#     # save the output image (encoded image)
+#     cv2.imwrite(output_image, encoded_image)
+#     # decode the secret data from the image
+#     decoded_data = decode(output_image, lsb_bits = 1)
+#     print("[+] Decoded data:", decoded_data)

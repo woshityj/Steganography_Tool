@@ -1,8 +1,8 @@
 
-def encode_aud_data():
+def encode_aud_data(name_of_file, data):
     import wave
 
-    name_of_file = input("Enter name of the file (with extension): - ")
+    # name_of_file = input("Enter name of the file (with extension): - ")
     song = wave.open(name_of_file, mode = 'rb')
 
     nframes = song.getnframes()
@@ -10,7 +10,7 @@ def encode_aud_data():
     frame_list = list(frames)
     frame_bytes = bytearray(frame_list)
 
-    data = input("\nEnter the secret message:- ")
+    # data = input("\nEnter the secret message:- ")
 
     res = ''.join(format(i, '08b') for i in bytearray(data, encoding = 'utf-8'))
     print("\nThe string after binary conversion:- " + (res))
@@ -35,18 +35,13 @@ def encode_aud_data():
         j = j + 1
     
     frame_modified = bytes(frame_bytes)
-
-    stegofile = input("\nEnter name of the stego file (with extension):- ")
-    with wave.open(stegofile, 'wb') as fd:
-        fd.setparams(song.getparams())
-        fd.writeframes(frame_modified)
-    print("\nEncoded the data successfully in the audio file")
     song.close()
+    return frame_modified
 
-def decode_aud_data():
+def decode_aud_data(name_of_file):
     import wave
 
-    name_of_file = input("Enter name of the file to be decided:- ")
+    # name_of_file = input("Enter name of the file to be decided:- ")
     song = wave.open(name_of_file, mode = 'rb')
 
     nframes = song.getnframes()
@@ -72,5 +67,5 @@ def decode_aud_data():
             if decoded_data[-5:] == "*^*^*":
                 print("The Encoded data was :--" , decoded_data[:-5])
                 p = 1
-                break
-
+                return decoded_data[:-5]
+    

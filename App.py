@@ -1,9 +1,9 @@
-import os
+import os, cv2, wave
 import tkinter as tk
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter.filedialog import asksaveasfilename
-import cv2
 import image_steganography as ims
+import audio_steganography as aus
 
 ERROR_UNSUPPORTED_TYPE = "File type {ext} not supported."
 ERROR_UNSUPPORTED_PATH = "File path {file_path} not supported. Try to use local file."
@@ -57,8 +57,9 @@ class MyApp:
                 elif ext.lower() in ['.txt']:
                     pass
                 # if the file is audio:
-                elif ext.lower() in ['.mp3']:
-                    pass
+                elif ext.lower() in ['.mp3'] or ext.lower() in ['.wav']:
+                    self.audio_path = file_path
+                    self.encoded = aus.encode_aud_data(file_path,message)
                 else:
                     tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_TYPE, height=5, width=40).pack()
                     return
@@ -73,8 +74,8 @@ class MyApp:
                 elif ext.lower() in ['.txt']:
                     pass
                 # if the file is audio:
-                elif ext.lower() in ['.mp3']:
-                    pass
+                elif ext.lower() in ['.mp3'] or ext.lower() in ['.wav']:
+                    self.tb_message.insert("1.0", aus.decode_aud_data(file_path))
                 else:
                     tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
                     return
@@ -94,6 +95,12 @@ class MyApp:
                 cv2.imwrite(filename, self.encoded)
                 # show image as per requested in spec
                 cv2.imshow(filename, self.encoded)
+            elif filename.endswith(('.wav', '.mp3')):
+                song = wave.open(self.audio_path, mode = 'rb')
+                with wave.open(filename, 'wb') as fd:
+                    fd.setparams(song.getparams())
+                    fd.writeframes(self.encoded)
+                    print("\nEncoded the data successfully in the audio file")
 
 
 app = MyApp()
