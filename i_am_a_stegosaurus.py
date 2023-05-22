@@ -17,6 +17,7 @@ supported_types = (
     '.doc'
 )
 
+
 def get_path(filetype):
     file_path = askopenfilename(
         title='Open a file',
@@ -51,7 +52,7 @@ class app:
         # UI
         self.root = Tk()
         self.root.title("i_am_a_stegosaurus")
-        self.root.geometry('685x500')
+        # self.root.geometry('685x500')
         self.root.resizable(0, 0)
 
         # frame
@@ -59,6 +60,7 @@ class app:
         self.settingFrame = Frame(self.rootFrame)
         self.payloadFrame = Frame(self.rootFrame)
         self.coverFrame = Frame(self.rootFrame)
+        self.actionFrame = Frame(self.rootFrame)
 
         self.payloadFrame.drop_target_register(DND_FILES)
         self.payloadFrame.dnd_bind('<<Drop>>', self.payload_on_drop)
@@ -70,6 +72,7 @@ class app:
         self.settingFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
         self.payloadFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
         self.coverFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
+        self.actionFrame.pack(padx=(0, 10), pady=(0, 10))
 
         # variables
         self.payloadPath = None
@@ -87,7 +90,7 @@ class app:
         # payload frame
         Label(self.payloadFrame, text="Payload", font=('Aria', 10)).grid(row=0, column=0, sticky='w')
         Button(self.payloadFrame, text="Upload a payload file or drag and drop here",
-               command=self.payload_on_change, width=91).grid(row=1, column=0)
+               command=self.payload_on_change, width=90).grid(row=1, column=0, pady=(0, 10))
         self.payload_scroll_bar = Scrollbar(self.payloadFrame)
         self.payload_scroll_bar.grid(row=2, column=1, sticky='nse')
         self.payload_text = Text(self.payloadFrame, height=5, yscrollcommand=self.payload_scroll_bar.set)
@@ -96,7 +99,11 @@ class app:
         # cover frame
         Label(self.coverFrame, text="Cover", font=('Aria', 10)).grid(row=0, column=0, sticky='w')
         Button(self.coverFrame, text="Upload a cover file or drag and drop here",
-               command=self.cover_on_change, width=91).grid(row=1, column=0)
+               command=self.cover_on_change, width=90).grid(row=1, column=0, pady=(0, 10))
+
+        # action frame
+        Button(self.actionFrame, text="Encode", command=self.encode).grid(row=0, column=0, sticky='e', padx=(0, 10))
+        Button(self.actionFrame, text="Decode", command=self.decode).grid(row=0, column=1, sticky='w', padx=(10, 0))
 
     def payload_on_change(self):
         self.payloadPath = get_path([('Text file', '*.txt')])
@@ -124,6 +131,12 @@ class app:
 
     def show_cover(self):
         os.startfile(self.coverPath)
+
+    def encode(self):
+        pass
+
+    def decode(self):
+        pass
 
     def run(self):
         self.root.mainloop()
