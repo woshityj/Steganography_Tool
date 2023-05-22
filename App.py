@@ -29,7 +29,7 @@ class MyApp:
         # specify number of LSB
         self.lbl_num = tk.Label(self.f_input, text='Number of bits: ')
         self.lbl_num.grid(row=1, column=0, sticky='e')
-        self.sb_num = tk.Spinbox(self.f_input, from_=1, to=3, width=10)
+        self.sb_num = tk.Spinbox(self.f_input, from_=1, to=5, width=10)
         self.sb_num.grid(row=1, column=1, sticky='w')
 
         self.lbl_DND = tk.Label(self.root, text='Drag and Drop Files Here', width=50, height=5, bg="#c8cfdb")
