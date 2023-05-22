@@ -1,21 +1,16 @@
 import os
 import tkinter as tk
+import wave
 from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar, IntVar, Checkbutton, Spinbox
+
+import cv2
 from tkinterdnd2 import DND_FILES, Tk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
-import cv2
-
-
-def encode(path, bit, text):
-    print('encode png at', path, 'with', bit, 'bit and text =', text)
-
-
-def decode(path, bit):
-    print('decode png', path, 'with', bit, 'bit')
+import image_steganography as ims
 
 
 supported_types = {
-    '.png': (encode, decode),
+    '.png': (ims.encode, ims.decode),
     '.gif': None,
     '.bmp': None,
     '.wav': None,
@@ -56,6 +51,10 @@ def get_text_content(path):
         return file.read()
 
 
+def show(path):
+    os.startfile(path)
+
+
 class app:
     def __init__(self):
         # UI
@@ -91,6 +90,7 @@ class app:
         self.payloadPath = None
         self.coverPath = None
         self.payloadText = None
+        self.encoded = None
 
         # setting frame
         Label(self.settingFrame, text="Settings", font=('Aria', 10)).grid(row=0, column=0, sticky='w')
@@ -140,15 +140,12 @@ class app:
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
-            self.show_cover()
+            show(self.coverPath)
 
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
-            self.show_cover()
-
-    def show_cover(self):
-        os.startfile(self.coverPath)
+            show(self.coverPath)
 
     def encode(self):
         if self.coverPath is None:
@@ -156,14 +153,38 @@ class app:
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.payload_text.get('1.0', 'end-1c')
-        supported_types[ext.lower()][0](self.coverPath, int(self.sbNumBit.get()), self.payloadText)
+        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.sbNumBit.get()))
+        self.save_as(ext)
 
     def decode(self):
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
-        supported_types[ext.lower()][1](self.coverPath, int(self.sbNumBit.get()))
+        text = supported_types[ext.lower()][1](self.coverPath, int(self.sbNumBit.get()))
+        self.payload_text.delete('1.0', tk.END)
+        self.payload_text.insert('1.0', text)
+        if self.ckbSaveOptionVar.get() == 1:
+            path = asksaveasfilename(defaultextension='.txt')
+            if path:
+                with open(path, 'w') as file:
+                    file.write(text)
+
+    def save_as(self, ext):
+        # save as prompt
+        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
+        if filename:
+            if filename.endswith(('.png', '.jpg', '.jpeg')):
+                # save image
+                cv2.imwrite(filename, self.encoded)
+                # show image as per requested in spec
+                show(filename)
+            elif filename.endswith(('.wav', '.mp3')):
+                song = wave.open(self.coverPath, mode = 'rb')
+                with wave.open(filename, 'wb') as fd:
+                    fd.setparams(song.getparams())
+                    fd.writeframes(self.encoded)
+                    print("\nEncoded the data successfully in the audio file")
 
     def run(self):
         self.root.mainloop()
