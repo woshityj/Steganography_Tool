@@ -11,7 +11,7 @@ def test1(path):
 
 
 def test2(path):
-    print('decode png')
+    print('decode png', path)
 
 
 supported_types = {
@@ -133,7 +133,7 @@ class app:
         self.payload_text.insert('1.0', get_text_content(self.payloadPath))
 
     def cover_on_change(self):
-        self.coverPath = get_path([('All file', '*.*')])
+        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.show_cover()
 
@@ -154,7 +154,7 @@ class app:
 
     def decode(self):
         _, ext = os.path.splitext(self.coverPath)
-        supported_types[ext.lower()][1]()
+        supported_types[ext.lower()][1](self.coverPath)
 
     def run(self):
         self.root.mainloop()
