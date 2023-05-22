@@ -1,21 +1,21 @@
 import os
 import tkinter as tk
-from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar, IntVar, Checkbutton
+from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar, IntVar, Checkbutton, Spinbox
 from tkinterdnd2 import DND_FILES, Tk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import cv2
 
 
-def test1(path):
-    print('encode png at', path)
+def encode(path, bit, text):
+    print('encode png at', path, 'with', bit, 'bit and text =', text)
 
 
-def test2(path):
-    print('decode png', path)
+def decode(path, bit):
+    print('decode png', path, 'with', bit, 'bit')
 
 
 supported_types = {
-    '.png': (test1, test2),
+    '.png': (encode, decode),
     '.gif': None,
     '.bmp': None,
     '.wav': None,
@@ -81,8 +81,8 @@ class app:
 
         self.rootFrame.pack(padx=10, pady=10)
         self.settingFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
-        self.settingSubFrame1.grid(row=1, column=0, sticky='w')
-        self.settingSubFrame2.grid(row=2, column=0, sticky='w')
+        self.settingSubFrame1.grid(row=1, column=0, sticky='w', pady=(0, 10))
+        self.settingSubFrame2.grid(row=2, column=0, sticky='w', pady=(0, 10))
         self.payloadFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
         self.coverFrame.pack(anchor='w', padx=(0, 10), pady=(0, 10))
         self.actionFrame.pack(padx=(0, 10), pady=(0, 10))
@@ -90,12 +90,16 @@ class app:
         # variables
         self.payloadPath = None
         self.coverPath = None
+        self.payloadText = None
 
         # setting frame
         Label(self.settingFrame, text="Settings", font=('Aria', 10)).grid(row=0, column=0, sticky='w')
         self.ckbSaveOptionVar = IntVar()
         Checkbutton(self.settingSubFrame1, text="Save decoded text",
                     variable=self.ckbSaveOptionVar).grid(row=0, column=0, sticky='w')
+        self.sbNumBit = Spinbox(self.settingSubFrame1, from_=1, to=5)
+        Label(self.settingSubFrame1, text="Number of bits:").grid(row=0, column=1, padx=(20, 0))
+        self.sbNumBit.grid(row=0, column=2)
         Label(self.settingSubFrame2, text="Password:").grid(row=0, column=0, sticky='w')
         txt_password = Text(self.settingSubFrame2, height=1, width=72)
         txt_password.grid(row=0, column=1, sticky='w')
@@ -130,7 +134,8 @@ class app:
 
     def show_payload(self):
         self.payload_text.delete('1.0', tk.END)
-        self.payload_text.insert('1.0', get_text_content(self.payloadPath))
+        self.payloadText = get_text_content(self.payloadPath)
+        self.payload_text.insert('1.0', self.payloadText)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
@@ -147,14 +152,18 @@ class app:
 
     def encode(self):
         if self.coverPath is None:
-            messagebox.showerror("Please select or drop a cover item first!")
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
-        supported_types[ext.lower()][0](self.coverPath)
+        self.payloadText = self.payload_text.get('1.0', 'end-1c')
+        supported_types[ext.lower()][0](self.coverPath, int(self.sbNumBit.get()), self.payloadText)
 
     def decode(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
         _, ext = os.path.splitext(self.coverPath)
-        supported_types[ext.lower()][1](self.coverPath)
+        supported_types[ext.lower()][1](self.coverPath, int(self.sbNumBit.get()))
 
     def run(self):
         self.root.mainloop()
