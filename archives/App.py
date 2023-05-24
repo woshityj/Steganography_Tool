@@ -52,14 +52,17 @@ class MyApp:
             if message != "":
                 # if the file is image:
                 if ext.lower() in ['.png']:
-                    self.encoded = ims.encode(file_path, message, int(self.sb_num.get()))
+                    self.encoded = ims.png_encode(file_path, message, int(self.sb_num.get()))
                 # if the file is text:
                 elif ext.lower() in ['.txt']:
                     pass
                 # if the file is audio:
-                elif ext.lower() in ['.mp3'] or ext.lower() in ['.wav']:
-                    self.audio_path = file_path
+                elif ext.lower() in ['.wav']:
+                    self.file_path = file_path
                     self.encoded = aus.encode_aud_data(file_path,message)
+                elif ext.lower() in ['.bmp']:
+                    self.file_path = file_path
+                    self.encoded = ims.bmp_encode(file_path,message)
                 else:
                     tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_TYPE, height=5, width=40).pack()
                     return
@@ -69,13 +72,15 @@ class MyApp:
             else:
                 # if the file is image:
                 if ext.lower() in ['.png']:
-                    self.tb_message.insert("1.0", ims.decode(file_path, int(self.sb_num.get())))
+                    self.tb_message.insert("1.0", ims.png_decode(file_path, int(self.sb_num.get())))
                 # if the file is text:
                 elif ext.lower() in ['.txt']:
                     pass
                 # if the file is audio:
-                elif ext.lower() in ['.mp3'] or ext.lower() in ['.wav']:
+                elif ext.lower() in ['.wav']:
                     self.tb_message.insert("1.0", aus.decode_aud_data(file_path))
+                elif ext.lower() in ['.bmp']:
+                    self.tb_message.insert("1.0", ims.bmp_decode(file_path))
                 else:
                     tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
                     return
@@ -95,12 +100,16 @@ class MyApp:
                 cv2.imwrite(filename, self.encoded)
                 # show image as per requested in spec
                 cv2.imshow(filename, self.encoded)
-            elif filename.endswith(('.wav', '.mp3')):
-                song = wave.open(self.audio_path, mode = 'rb')
+            elif filename.endswith(('.wav')):
+                song = wave.open(self.file_path, mode = 'rb')
                 with wave.open(filename, 'wb') as fd:
                     fd.setparams(song.getparams())
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
+            elif filename.endswith(('bmp')):
+                with open(filename, "wb") as image:
+                    image.write(self.encoded)
+            
 
 
 app = MyApp()

@@ -10,11 +10,33 @@ pip install -r requirements.txt
 
 # Project Requirement Milestone
 ## File formats
-1. Images (png, jpg, jpeg)✅
-2. Audio (mp3, wav)✅
-    mp4 (WIP)
-3. Document (word, txt, xls)
+1. Images (png, bmp)✅ gif (WIP)
+2. Audio (wav)✅ mp4 (WIP)
+3. Document (txt)✅ xls, doc (WIP)
 
 ## Features
 1. Image LSB (1-5 bit encoding)✅
-2. Error checking (If payload is too large)
+2. Error checking (If payload is too large) - Nick
+3. Encryption using password - KK
+4. Add to show before and after encoding for file (Image, Audio, File)
+5. File signature checker - Kovi
+
+# Delgations
+## Kovi
+File signature checker
+
+## Kah Kian
+Password encryption
+
+## Yu Jie
+Multi-File stegnographic encoding
+
+## Richie
+GUI
+
+## Cliff
+Add additional file format support
+GUI integration
+
+## Nick
+Payload size error checking
