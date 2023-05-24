@@ -14,9 +14,9 @@ import audio_steganography as auds
 import math
 
 supported_types = {
-    '.png': (ims.encode, ims.decode),
+    '.png': (ims.png_encode, ims.png_decode),
     '.gif': None,
-    '.bmp': None,
+    '.bmp': (ims.bmp_encode, ims.bmp_decode),
     '.wav': None,
     '.mp3': None,
     '.mp4': None,
@@ -111,6 +111,8 @@ class ImagePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
+        self.image_label_after = None
+
         # input text box for entering secret
         self.lbl_secret = tk.Label(self, text='Secret message: ')
         self.lbl_secret.grid(row=0, column=0, sticky='ne')
@@ -135,15 +137,18 @@ class ImagePage(tk.Frame):
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
+            self.success_label = Label(self, text="Successfully uploaded file")
+            self.success_label.grid(row = 3, column = 0)
+
             self.img_before = Label(self, text = "Uploaded Image: ")
-            self.img_before.grid(row = 3, column = 0)
+            self.img_before.grid(row = 4, column = 0)
 
             img = Image.open(self.coverPath)
             img = img.resize((100, 100), Image.ANTIALIAS)
             img = ImageTk.PhotoImage(img)
             self.image_label = Label(self, image = img)
             self.image_label.image = img
-            self.image_label.grid(row=4, column = 0)
+            self.image_label.grid(row=5, column = 0)
     
     def encode_image(self):
         if self.coverPath is None:
@@ -151,7 +156,10 @@ class ImagePage(tk.Frame):
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.tb_message.get('1.0', 'end-1c')
-        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.sb_num.get()))
+        if (ext.lower() == '.png'):
+            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.sb_num.get()))
+        elif (ext.lower() == '.bmp'):
+            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
         self.save_as(ext)
 
     def decode_image(self):
@@ -159,7 +167,10 @@ class ImagePage(tk.Frame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
-        text = supported_types[ext.lower()][1](self.coverPath, int(self.sb_num.get()))
+        if (ext.lower() == '.png'):
+            text = supported_types[ext.lower()][1](self.coverPath, int(self.sb_num.get()))
+        elif (ext.lower() == '.bmp'):
+            text = supported_types[ext.lower()][1](self.coverPath)
         self.tb_message.delete('1.0', tk.END)
         self.tb_message.insert('1.0', text)
 
