@@ -15,7 +15,7 @@ def to_bin(data):
     else:
         raise TypeError("Type not supported.")
   
-def encode(image_name, secret_data, lsb_bits):
+def png_encode(image_name, secret_data, lsb_bits):
     # read the image
     image = cv2.imread(image_name)
     # maximum bytes to encode
@@ -72,7 +72,7 @@ def encode(image_name, secret_data, lsb_bits):
                 break
     return image
   
-def decode(image_name, lsb_bits):
+def png_decode(image_name, lsb_bits):
     print("[+] Decoding...")
     # read the image
     image = cv2.imread(image_name)
@@ -93,15 +93,51 @@ def decode(image_name, lsb_bits):
             break
     return decoded_data[:-5]
 
-# Deprecated code
-# if __name__ == "__main__":
-#     input_image = "test.PNG"
-#     output_image = "encoded_image.PNG"
-#     secret_data = "This is a top secret message....."
-#     # encode the data into the image
-#     encoded_image = encode(image_name=input_image, secret_data=secret_data, lsb_bits = 1)
-#     # save the output image (encoded image)
-#     cv2.imwrite(output_image, encoded_image)
-#     # decode the secret data from the image
-#     decoded_data = decode(output_image, lsb_bits = 1)
-#     print("[+] Decoded data:", decoded_data)
+def bmp_encode(image_path, data):
+    # Open the file in binary mode
+    with open(image_path, "rb") as image:
+        f = image.read()
+        byte_array = bytearray(f)
+
+    # Convert data to binary
+    data_binary = ''.join(format(ord(i), '08b') for i in data)
+    data_len = format(len(data_binary), '08b')
+
+    # Append the size of data to the start of data_binary
+    data_binary = data_len + data_binary
+
+    # Append data_binary to image bytes
+    for i in range(len(data_binary)):
+        byte_array[i+54] = (byte_array[i+54] & 254) | int(data_binary[i])  # 54 bytes is standard BMP header
+
+    return byte_array
+
+
+def bmp_decode(image_path):
+    # Open the file in binary mode
+    with open(image_path, "rb") as image:
+        f = image.read()
+        byte_array = bytearray(f)
+
+    # Extract the size of original hidden data
+    len_str = ""
+    for i in range(8):
+        if byte_array[i+54] & 1:
+            len_str += '1'
+        else:
+            len_str += '0'
+    data_len = int(len_str, 2)
+
+    # Extract data
+    data_binary = ""
+    for i in range(data_len):
+        if byte_array[i+54+8] & 1:
+            data_binary += '1'
+        else:
+            data_binary += '0'
+
+    # Convert binary data to string
+    data_str = "".join(chr(int(data_binary[i:i+8], 2)) for i in range(0, len(data_binary), 8))
+    return data_str
+
+
