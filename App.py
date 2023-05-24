@@ -4,7 +4,6 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter.filedialog import asksaveasfilename
 import image_steganography as ims
 import audio_steganography as aus
-from pydub import AudioSegment
 
 ERROR_UNSUPPORTED_TYPE = "File type {ext} not supported."
 ERROR_UNSUPPORTED_PATH = "File path {file_path} not supported. Try to use local file."
@@ -64,9 +63,6 @@ class MyApp:
                 elif ext.lower() in ['.wav']:
                     self.audio_path = file_path
                     self.encoded = aus.encode_wav_data(file_path,message)
-                elif ext.lower() in ['.mp3']:
-                    self.audio_path = file_path
-                    self.encoded = aus.encode_mp3_data(file_path,message)
                 else:
                     tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_TYPE, height=5, width=40).pack()
                     return
@@ -83,8 +79,6 @@ class MyApp:
                 # if the file is audio:
                 elif ext.lower() in ['.wav']:
                     self.tb_message.insert("1.0", aus.decode_wav_data(file_path))
-                elif ext.lower() in ['.mp3']:
-                    self.tb_message.insert("1.0", aus.decode_mp3_data(file_path))
                 else:
                     tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
                     return
@@ -111,17 +105,6 @@ class MyApp:
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
                 song.close()
-            elif filename.endswith(('.mp3')):
-                song = AudioSegment.from_mp3(self.audio_path)
-                modified_audio = AudioSegment(
-                    data=self.encoded,
-                    sample_width=song.sample_width,
-                    frame_rate=song.frame_rate,
-                    channels=song.channels
-                )
-                # modified_song = song._spawn(self.encoded)
-                modified_audio.export(filename, format='mp3')
-                print("\nEncoded the data successfully in the audio file")
 
 app = MyApp()
 app.run()
