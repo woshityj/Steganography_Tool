@@ -1,5 +1,7 @@
 import numpy as np
 
+from tkinter.filedialog import asksaveasfilename, askopenfilename
+
 def to_bin(data):
     """Convert `data` to binary format as string"""
     if isinstance(data, str):
@@ -13,7 +15,7 @@ def to_bin(data):
     else:
         raise TypeError("Type not supported.")
 
-def encode(secret_data):
+def secret(secret_data):
     l = len(secret_data)
     i = 0
     add = ''
@@ -37,11 +39,14 @@ def encode(secret_data):
     length = len(res1)
     print("Length of binary after conversion:- ", length)
 
+    return res1
+
+def encode(document_name, encoded_file, res1):
     HM_SK = ""
     ZWC = {"00":u'\u200C', "01":u'\u202C', "11":u'\u202D', "10":u'\u200E'}
-    file1 = open("testing.txt", "r+")
-    name_of_encoded_file = input("\nEnter the name of the Stego file after Encoding (with extension):- ")
-    encoded_file = open(name_of_encoded_file, "w+", encoding="utf-8")
+    file1 = open(document_name, "r+")
+
+    encoded_file = open(encoded_file, "w+", encoding="utf-8")
     word = []
     for line in file1:
         word += line.split()
@@ -73,10 +78,9 @@ def BinaryToDecimal(binary):
     return string
 
 
-def decode():
+def decode(document_path):
     ZWC_reverse = {u'\u200C':"00", u'\u202C':"01", u'\u202D':"11", u'\u200E':"10"}
-    stego = input("\nPlease enter the stego file name (with extension) to decode the message:- ")
-    file4 = open(stego, "r", encoding = "utf-8")
+    file4 = open(document_path, "r", encoding = "utf-8")
     temp = ''
     for line in file4:
         for words in line.split():
@@ -113,5 +117,4 @@ def decode():
             decimal_data = BinaryToDecimal(t4)
             final += chr((decimal_data ^ 170) - 48)
     print("\nMessage after decoding from the stego file:- ", final)
-
-decode()
+    return final

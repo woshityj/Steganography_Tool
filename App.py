@@ -1,90 +1,165 @@
-import os, cv2, wave
+import os
+from PIL import Image, ImageTk
 import tkinter as tk
+from tkinter import messagebox
 from tkinterdnd2 import DND_FILES, TkinterDnD
-from tkinter.filedialog import asksaveasfilename
+import customtkinter
+from tkinter.filedialog import asksaveasfilename, askopenfilename
+import wave
+
+import cv2
 import image_steganography as ims
-import audio_steganography as aus
+import document_steganography as dms
+import audio_steganography as auds
 
-ERROR_UNSUPPORTED_TYPE = "File type {ext} not supported."
-ERROR_UNSUPPORTED_PATH = "File path {file_path} not supported. Try to use local file."
+supported_types = {
+    '.png': (ims.png_encode, ims.png_decode),
+    '.gif': None,
+    '.bmp': (ims.bmp_encode, ims.bmp_decode),
+    '.wav': None,
+    '.mp3': None,
+    '.mp4': None,
+    '.txt': (dms.decode),
+    '.xls': None,
+    '.doc': None
+}
 
-class MyApp:
-    def __init__(self):
-        self.encoded = None
-        self.data_string = None
-        self.root = TkinterDnD.Tk()
-        self.root.title('LSB Steganography')
-        self.root.resizable(0, 0)
 
-        # frame for input
-        self.f_input = tk.Frame(self.root)
-        self.f_input.pack(padx=10, pady=10)
+def get_path(filetype):
+    file_path = askopenfilename(
+        title='Open a file',
+        initialdir='/',
+        filetypes=filetype
+    )
+    if file_path:
+        return file_path
 
-        # input text box for entering secret
-        self.lbl_secret = tk.Label(self.f_input, text='Secret message: ')
-        self.lbl_secret.grid(row=0, column=0, sticky='ne')
-        self.tb_message = tk.Text(self.f_input, height=2, width=30)
-        self.tb_message.grid(row=0, column=1, sticky='w')
+def get_drop(event, filetype):
+    file_path = event.data
+    if os.path.isfile(file_path):
+        _, ext = os.path.splitext(file_path)
+    else:
+        messagebox.showerror("Error", f"Cannot open file from {file_path}")
+        return
 
-        # specify number of LSB
-        self.lbl_num = tk.Label(self.f_input, text='Number of bits: ')
-        self.lbl_num.grid(row=1, column=0, sticky='e')
-        self.sb_num = tk.Spinbox(self.f_input, from_=1, to=5, width=10)
-        self.sb_num.grid(row=1, column=1, sticky='w')
+    if ext.lower() not in list(filetype):
+        messagebox.showerror("Error", f"File type {ext} not supported.")
+        return
+    return file_path
 
-        self.lbl_DND = tk.Label(self.root, text='Drag and Drop Files Here', width=50, height=5, bg="#c8cfdb")
-        self.lbl_DND.pack(pady=10, padx=10)
+class MainMenu(customtkinter.CTkFrame):
+    def __init__(self, master, controller, **kwargs):
+        super().__init__(master, **kwargs)
+        self.grid_columnconfigure(0, weight = 1)
 
-        self.lbl_DND.drop_target_register(DND_FILES)
-        self.lbl_DND.dnd_bind('<<Drop>>', self.drop)
+        # add widgets onto the frame, for example:
+        self.label = customtkinter.CTkLabel(self, text = "Steganography", font = customtkinter.CTkFont(size = 20, weight = "bold"))
+        self.label.grid(row = 0, column = 0, padx = 20, pady=10)
+        self.img_steg_button = customtkinter.CTkButton(self, text = "Image Steganography", command = lambda : controller.show_frame(ImagePage))
+        self.img_steg_button.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
 
-        self.binary_content = None
+        self.doc_steg_button = customtkinter.CTkButton(self, text = "Document Steganography", command = lambda : controller.show_frame(DocumentPage))
+        self.doc_steg_button.grid(row=2, column=0, padx=20, pady=5, sticky="ew")
 
-    def drop(self, event):
-        file_path = event.data
-        if os.path.isfile(file_path):
-            _, ext = os.path.splitext(file_path)  # ext is the extension name
+        self.img_steg_button = customtkinter.CTkButton(self, text = "Audio Steganography", command = lambda : controller.show_frame(AudioPage))
+        self.img_steg_button.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
 
-            # determine to encode or decode
-            # by checking whether the message text box is empty
-            # if tb_message is not empty, do encode:
-            message = self.tb_message.get("1.0", 'end-1c')
-            if message != "":
-                # if the file is image:
-                if ext.lower() in ['.png']:
-                    self.encoded = ims.encode(file_path, message, int(self.sb_num.get()))
-                # if the file is text:
-                elif ext.lower() in ['.txt']:
-                    pass
-                # if the file is audio:
-                elif ext.lower() in ['.mp3'] or ext.lower() in ['.wav']:
-                    self.audio_path = file_path
-                    self.encoded = aus.encode_aud_data(file_path,message)
-                else:
-                    tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_TYPE, height=5, width=40).pack()
-                    return
+        self.img_steg_button = customtkinter.CTkButton(self, text = "Video Steganography", command = lambda : controller.show_frame(ImagePage))
+        self.img_steg_button.grid(row=4, column=0, padx=20, pady=5, sticky="ew")
 
-                self.save_as(ext)
-            # if tb_message is empty, do decode:
-            else:
-                # if the file is image:
-                if ext.lower() in ['.png']:
-                    self.tb_message.insert("1.0", ims.decode(file_path, int(self.sb_num.get())))
-                # if the file is text:
-                elif ext.lower() in ['.txt']:
-                    pass
-                # if the file is audio:
-                elif ext.lower() in ['.mp3'] or ext.lower() in ['.wav']:
-                    self.tb_message.insert("1.0", aus.decode_aud_data(file_path))
-                else:
-                    tk.Label(tk.Toplevel(self.root), text=f"File type {ext} not supported.", height=5, width=40).pack()
-                    return
-        else:
-            tk.Label(tk.Toplevel(self.root), text=ERROR_UNSUPPORTED_PATH,
-                     height=5, width=50, justify='left', wraplength=350).pack(anchor='w', padx=10, pady=10)
+class ImagePage(customtkinter.CTkFrame):
+    def __init__(self, master, controller, **kwargs):
+        super().__init__(master, **kwargs)
 
-    def run(self):
-        self.root.mainloop()
+        self.encoded_image_label = None
+
+        self.grid_columnconfigure((0, 1), weight = 1)
+
+        self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
+        self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
+
+        self.label = customtkinter.CTkLabel(self, text="Image Steganography", font = customtkinter.CTkFont(size = 20, weight = "bold"))
+        self.label.grid(row = 1, column = 0, padx = 20, pady= 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text="Settings", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 2, column = 0, padx = 20, pady= 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text="Set Number of Bits", font = customtkinter.CTkFont(size = 15))
+        self.label.grid(row = 3, column = 0, padx = 20, pady= 2)
+        self.bits_option_menu = customtkinter.CTkOptionMenu(self, values = ["1", "2", "3", "4", "5"])
+        self.bits_option_menu.grid(row = 4, column = 0, padx = 20, pady = (10, 10))
+
+        self.checkbox = customtkinter.CTkCheckBox(self, text = "Save Text")
+        self.checkbox.grid(row = 4, column = 1, padx = 20, pady = 10)
+
+        self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 5, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Image here to upload an Image", command = self.cover_on_change)
+        self.upload_button.grid(row = 6, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
+        self.upload_button.drop_target_register(DND_FILES)
+        self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
+
+        self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 7, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
+
+        self.encode_button = customtkinter.CTkButton(self, text = "Encode Image", command = self.encode_image)
+        self.encode_button.grid(row = 9, column = 0, padx = 20, pady = 10)
+
+        self.decode_button = customtkinter.CTkButton(self, text = "Decode Image", command = self.decode_image)
+        self.decode_button.grid(row = 9, column = 1, padx = 20, pady = 10)
+
+        self.label = customtkinter.CTkLabel(self, text="Uploaded Image", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 10, column = 0, padx = 20, pady= 10, columnspan = 1)
+
+        self.label = customtkinter.CTkLabel(self, text="Encoded Image", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 10, column = 1, padx = 20, pady= 10, columnspan = 1)
+
+    def cover_on_drop(self, event):
+        self.coverPath = get_drop(event, supported_types)
+        if self.coverPath is not None:
+            self.show(self.coverPath)
+
+    def cover_on_change(self):
+        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
+        if self.coverPath is not None:
+            self.show(self.coverPath)
+
+    def show(self, coverPath):
+        self.uploaded_image = customtkinter.CTkImage(Image.open(coverPath), size = (100, 100))
+        self.image_label = customtkinter.CTkLabel(self, image = self.uploaded_image, text = "")
+        self.image_label.grid(row = 11, column = 0)
+
+        self.success_label = customtkinter.CTkLabel(self, text ="Successfully uploaded file")
+        self.success_label.grid(row = 12, column = 0)
+
+    def encode_image(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        if (ext.lower() == '.png'):
+            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+        elif (ext.lower() == '.bmp'):
+            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+        self.save_as(ext)
+    
+    def decode_image(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        if (ext.lower() == '.png'):
+            text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
+        elif (ext.lower() == '.bmp'):
+            text = supported_types[ext.lower()][1](self.coverPath)
+        self.secret_message.delete('1.0', tk.END)
+        self.secret_message.insert('1.0', text)
+
+        if self.encoded_image_label is not None:
+            self.encoded_image_label.destroy()
 
     def save_as(self, ext):
         # save as prompt
@@ -94,14 +169,173 @@ class MyApp:
                 # save image
                 cv2.imwrite(filename, self.encoded)
                 # show image as per requested in spec
-                cv2.imshow(filename, self.encoded)
-            elif filename.endswith(('.wav', '.mp3')):
-                song = wave.open(self.audio_path, mode = 'rb')
+                self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
+                self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
+                self.encoded_image_label.grid(row = 10, column = 1)
+
+class DocumentPage(customtkinter.CTkFrame):
+    def __init__(self, master, controller, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.grid_columnconfigure((0, 1), weight = 1)
+
+        self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
+        self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
+
+        self.label = customtkinter.CTkLabel(self, text = "Document Steganography", font = customtkinter.CTkFont(size = 20, weight = "bold"))
+        self.label.grid(row = 1, column = 0, padx = 20, pady= 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 2, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Document here to upload", command = self.cover_on_change)
+        self.upload_button.grid(row = 3, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
+        self.upload_button.drop_target_register(DND_FILES)
+        self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
+
+        self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 4, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message.grid(row = 5, column = 0, sticky = 'w', columnspan = 2)
+
+        self.encode_button = customtkinter.CTkButton(self, text = "Encode Document", command = self.encode_document)
+        self.encode_button.grid(row = 6, column = 0, padx = 20, pady = 10)
+
+        self.decode_button = customtkinter.CTkButton(self, text = "Decode Document", command = self.decode_document)
+        self.decode_button.grid(row = 6, column = 1, padx = 20, pady = 10)
+
+    def cover_on_drop(self, event):
+        self.coverPath = get_drop(event, supported_types)
+        if self.coverPath is not None:
+            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
+            self.success_label.grid(row = 7, column = 0)
+
+    def cover_on_change(self):
+        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
+        if self.coverPath is not None:
+            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
+            self.success_label.grid(row = 7, column = 0)
+    
+    def encode_document(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        secret_text = dms.secret(self.payloadText)
+        self.save_as(ext, secret = secret_text)
+
+    def decode_document(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        text = dms.decode(self.coverPath)
+        self.secret_message.delete('1.0', tk.END)
+        self.secret_message.insert('1.0', text)
+    
+    def save_as(self, ext, secret = None):
+        # save as prompt
+        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
+        if filename:
+            if filename.endswith(('.txt')):
+                dms.encode(self.coverPath, filename, secret)
+                print("\nEncoded the data successfully in the document file")
+    
+class AudioPage(customtkinter.CTkFrame):
+    def __init__(self, master, controller, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.grid_columnconfigure((0, 1), weight = 1)
+
+        self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
+        self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
+
+        self.label = customtkinter.CTkLabel(self, text="Audio Steganography", font = customtkinter.CTkFont(size = 20, weight = "bold"))
+        self.label.grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 2, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Document here to upload", command = self.cover_on_change)
+        self.upload_button.grid(row = 3, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
+        self.upload_button.drop_target_register(DND_FILES)
+        self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
+
+        self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 4, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message.grid(row = 5, column = 0, sticky = 'w', columnspan = 2)
+
+        self.encode_button = customtkinter.CTkButton(self, text = "Encode Audio", command = self.encode_audio)
+        self.encode_button.grid(row = 6, column = 0, padx = 20, pady = 10)
+
+        self.decode_button = customtkinter.CTkButton(self, text = "Decode Audio", command = self.decode_audio)
+        self.decode_button.grid(row = 6, column = 1, padx = 20, pady = 10)
+
+    def cover_on_drop(self, event):
+        self.coverPath = get_drop(event, supported_types)
+        if self.coverPath is not None:
+            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
+            self.success_label.grid(row = 7, column = 0)
+
+    def cover_on_change(self):
+        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
+        if self.coverPath is not None:
+            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
+            self.success_label.grid(row = 7, column = 0)
+
+    def encode_audio(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.sb_num.get()))
+        self.save_as(ext)
+
+    def decode_audio(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        text = auds.decode_aud_data(self.coverPath)
+        self.secret_message.delete('1.0', tk.END)
+        self.secret_message.insert('1.0', text)
+
+    def save_as(self, ext, secret = None):
+        # save as prompt
+        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
+        if filename:
+            if filename.endswith(('.wav')):
+                song = wave.open(self.coverPath, mode = 'rb')
                 with wave.open(filename, 'wb') as fd:
                     fd.setparams(song.getparams())
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
 
+class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
+    def __init__(self):
+        super().__init__()
+        self.TkdndVersion = TkinterDnD._require(self)
 
-app = MyApp()
-app.run()
+        self.title("I am a stegosaurus")
+        self.geometry("400x700")
+
+        container = customtkinter.CTkFrame(master=self)
+        container.pack(side = "top", fill = "both", expand = True)
+        container.grid_rowconfigure(0, weight = 1)
+        container.grid_columnconfigure(0, weight = 1)
+        self.frames = {}
+        
+        for F in (MainMenu, ImagePage, DocumentPage, AudioPage):
+            frame = F(container, self)
+
+            self.frames[F] = frame
+            frame.grid(row = 0, column = 0, sticky = "nsew")
+        
+        self.show_frame(MainMenu)
+
+    def show_frame(self, cont):
+        frame = self.frames[cont]
+        frame.tkraise()
+
+
+app = App()
+app.mainloop()
