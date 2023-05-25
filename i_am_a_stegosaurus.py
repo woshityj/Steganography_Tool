@@ -11,7 +11,7 @@ import image_steganography as ims
 import math
 
 supported_types = {
-    '.png': (ims.encode, ims.decode),
+    '.png': None,
     '.gif': None,
     '.bmp': None,
     '.wav': None,

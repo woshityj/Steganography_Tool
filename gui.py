@@ -1,7 +1,7 @@
 import os
 import tkinter as tk
 import wave
-from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar, IntVar, Checkbutton, Spinbox, Canvas
+from tkinter import Label, Text, Button, messagebox, Frame, Scrollbar, IntVar, Checkbutton, Spinbox, Canvas, Entry
 from PIL import Image, ImageTk
 
 import cv2
@@ -52,7 +52,7 @@ def get_text_content(path):
     with open(path, 'r') as file:
         return file.read()
 
-class tkinterApp(tk.Tk):
+class tkinterApp(Tk):
     def __init__(self, *args, **kwargs):
 
         # variables
@@ -61,7 +61,7 @@ class tkinterApp(tk.Tk):
         self.payloadText = None
         self.encoded = None
 
-        tk.Tk.__init__(self, *args, **kwargs)
+        Tk.__init__(self, *args, **kwargs)
         self.geometry('450x300')
 
         container = tk.Frame(self)
@@ -124,9 +124,11 @@ class ImagePage(tk.Frame):
         self.lbl_num.grid(row=1, column=0, sticky='e')
         self.sb_num = tk.Spinbox(self, from_=1, to=5, width=10)
         self.sb_num.grid(row=1, column=1, sticky='w')
-
-        self.upload_button = Button(self, text="Click here to upload an Image", command=self.cover_on_change)
+        
+        self.upload_button = Button(self, text="Click here or Drop an Image here to upload an Image", command=self.cover_on_change)
         self.upload_button.grid(row=1, column = 1)
+        self.upload_button.drop_target_register(DND_FILES)
+        self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
 
         self.encode_button = Button(self, text="Encode Image", command = self.encode_image)
         self.encode_button.grid(row = 2, column = 0)
@@ -134,16 +136,24 @@ class ImagePage(tk.Frame):
         self.decode_button = Button(self, text="Decode Image", command = self.decode_image)
         self.decode_button.grid(row = 2, column = 1)
 
+    def cover_on_drop(self, event):
+        self.coverPath = get_drop(event, supported_types)
+        if self.coverPath is not None:
+            self.show(self.coverPath)
+    
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
+            self.show(self.coverPath)
+    
+    def show(self, coverPath):
             self.success_label = Label(self, text="Successfully uploaded file")
             self.success_label.grid(row = 3, column = 0)
 
             self.img_before = Label(self, text = "Uploaded Image: ")
             self.img_before.grid(row = 4, column = 0)
 
-            img = Image.open(self.coverPath)
+            img = Image.open(coverPath)
             img = img.resize((100, 100), Image.ANTIALIAS)
             img = ImageTk.PhotoImage(img)
             self.image_label = Label(self, image = img)
