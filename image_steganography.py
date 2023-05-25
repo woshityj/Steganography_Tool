@@ -8,7 +8,7 @@ def to_bin(data):
         return ''.join([ format(ord(i), "08b") for i in data ])
     elif isinstance(data, bytes):
         return ''.join([ format(i, "08b") for i in data ])
-    elif isinstance(data, np.ndarray):
+    elif isinstance(data, np.ndarray) or isinstance(data, tuple):
         return [ format(i, "08b") for i in data ]
     elif isinstance(data, int) or isinstance(data, np.uint8):
         return format(data, "08b")
@@ -139,5 +139,4 @@ def bmp_decode(image_path):
     # Convert binary data to string
     data_str = "".join(chr(int(data_binary[i:i+8], 2)) for i in range(0, len(data_binary), 8))
     return data_str
-
 
