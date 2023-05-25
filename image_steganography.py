@@ -94,14 +94,14 @@ def decode(image_name, lsb_bits):
     return decoded_data[:-5]
 
 # Deprecated code
-# if __name__ == "__main__":
-#     input_image = "test.PNG"
-#     output_image = "encoded_image.PNG"
-#     secret_data = "This is a top secret message....."
-#     # encode the data into the image
-#     encoded_image = encode(image_name=input_image, secret_data=secret_data, lsb_bits = 1)
-#     # save the output image (encoded image)
-#     cv2.imwrite(output_image, encoded_image)
-#     # decode the secret data from the image
-#     decoded_data = decode(output_image, lsb_bits = 1)
-#     print("[+] Decoded data:", decoded_data)
+if __name__ == "__main__":
+    input_image = "test.PNG"
+    output_image = "encoded_image.PNG"
+    secret_data = "This is a top secret message....."
+    # encode the data into the image
+    encoded_image = encode(image_name=input_image, secret_data=secret_data, lsb_bits = 5)
+    # save the output image (encoded image)
+    cv2.imwrite(output_image, encoded_image)
+    # decode the secret data from the image
+    decoded_data = decode(output_image, lsb_bits = 5)
+    print("[+] Decoded data:", decoded_data)
