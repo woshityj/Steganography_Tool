@@ -1,202 +1,61 @@
-import numpy as np
+import shutil
+import os
 import cv2
+import image_steganography
+from subprocess import call, STDOUT
 
-def msgtobinary(msg):
-    if type(msg) == str:
-        result= ''.join([ format(ord(i), "08b") for i in msg ])
-    
-    elif type(msg) == bytes or type(msg) == np.ndarray:
-        result= [ format(i, "08b") for i in msg ]
-    
-    elif type(msg) == int or type(msg) == np.uint8:
-        result=format(msg, "08b")
+def count_frames(filename):
+    cap = cv2.VideoCapture(filename)
+    length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    print(f"Total frame in video are: {length - 1}")
+    return length
 
-    else:
-        raise TypeError("Input type is not supported in this function")
-    
-    return result
-
-
-def KSA(key):
-    key_length = len(key)
-    S = list(range(256))
-    j = 0
-    for i in range(256):
-        j = (j + S[i] + key[i % key_length]) % 256
-        S[i], S[j] = S[j], S[i]
-    return S
-
-def PRGA(S, n):
-    i = 0
-    j = 0
-    key = []
-    while n > 0:
-        n = n - 1
-        i = (i + 1) % 256
-        j = (j + S[i]) % 256
-        S[i], S[j] = S[j], S[i]
-        K = S[(S[i] + S[j]) % 256]
-        key.append(K)
-    return key
-
-def preparing_key_array(s):
-    return [ord(c) for c in s]
-
-def encryption(plaintext):
-    print("Enter the key : ")
-    key=input()
-    key=preparing_key_array(key)
-
-    S=KSA(key)
-
-    keystream=np.array(PRGA(S,len(plaintext)))
-    plaintext=np.array([ord(i) for i in plaintext])
-
-    cipher=keystream^plaintext
-    ctext=''
-    for c in cipher:
-        ctext=ctext+chr(c)
-    return ctext
-
-def decryption(ciphertext):
-    print("Enter the key : ")
-    key=input()
-    key=preparing_key_array(key)
-
-    S=KSA(key)
-
-    keystream=np.array(PRGA(S,len(ciphertext)))
-    ciphertext=np.array([ord(i) for i in ciphertext])
-
-    decoded=keystream^ciphertext
-    dtext=''
-    for c in decoded:
-        dtext=dtext+chr(c)
-    return dtext
-
-def embed(frame):
-    data=input("\nEnter the data to be Encoded in Video :") 
-    data=encryption(data)
-    print("The encrypted data is : ",data)
-    if (len(data) == 0): 
-        raise ValueError('Data entered to be encoded is empty')
-
-    data +='*^*^*'
-    
-    binary_data=msgtobinary(data)
-    length_data = len(binary_data)
-    
-    index_data = 0
-    
-    for i in frame:
-        for pixel in i:
-            r, g, b = msgtobinary(pixel)
-            if index_data < length_data:
-                pixel[0] = int(r[:-1] + binary_data[index_data], 2) 
-                index_data += 1
-            if index_data < length_data:
-                pixel[1] = int(g[:-1] + binary_data[index_data], 2) 
-                index_data += 1
-            if index_data < length_data:
-                pixel[2] = int(b[:-1] + binary_data[index_data], 2) 
-                index_data += 1
-            if index_data >= length_data:
-                break
-        return frame
-
-def extract(frame):
-    data_binary = ""
-    final_decoded_msg = ""
-    for i in frame:
-        for pixel in i:
-            r, g, b = msgtobinary(pixel) 
-            data_binary += r[-1]  
-            data_binary += g[-1]  
-            data_binary += b[-1]  
-            total_bytes = [ data_binary[i: i+8] for i in range(0, len(data_binary), 8) ]
-            decoded_data = ""
-            for byte in total_bytes:
-                decoded_data += chr(int(byte, 2))
-                if decoded_data[-5:] == "*^*^*": 
-                    for i in range(0,len(decoded_data)-5):
-                        final_decoded_msg += decoded_data[i]
-                    final_decoded_msg = decryption(final_decoded_msg)
-                    print("\n\nThe Encoded data which was hidden in the Video was :--\n",final_decoded_msg)
-                    return 
-
-
-def encode_vid_data():
-    cap=cv2.VideoCapture("cover_video.mp4")
-    vidcap = cv2.VideoCapture("cover_video.mp4")    
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    frame_width = int(vidcap.get(3))
-    frame_height = int(vidcap.get(4))
-
-    size = (frame_width, frame_height)
-    out = cv2.VideoWriter('stego_video.mp4',fourcc, 25.0, size)
-    max_frame=0
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if ret == False:
-            break
-        max_frame+=1
-    cap.release()
-    print("Total number of Frame in selected Video :",max_frame)
-    print("Enter the frame number where you want to embed data : ")
-    n=int(input())
-    frame_number = 0
-    while(vidcap.isOpened()):
-        frame_number += 1
-        ret, frame = vidcap.read()
-        if ret == False:
-            break
-        if frame_number == n:    
-            change_frame_with = embed(frame)
-            frame_ = change_frame_with
-            frame = change_frame_with
-        out.write(frame)
-    
-    print("\nEncoded the data successfully in the video file.")
-    return frame_
-
-def decode_vid_data(frame_):
-    cap = cv2.VideoCapture('stego_video.mp4')
-    max_frame=0
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if ret == False:
-            break
-        max_frame+=1
-    print("Total number of Frame in selected Video :",max_frame)
-    print("Enter the secret frame number from where you want to extract data")
-    n=int(input())
-    vidcap = cv2.VideoCapture('stego_video.mp4')
-    frame_number = 0
-    while(vidcap.isOpened()):
-        frame_number += 1
-        ret, frame = vidcap.read()
-        if ret == False:
-            break
-        if frame_number == n:
-            extract(frame_)
-            return
-
-def vid_steg():
+def frame_extraction(video):
+    if not os.path.exists("./tmp"):
+        os.makedirs("tmp")
+    temp_folder = "./tmp"
+    print("[Info] tmp directory is created")
+    vidcap = cv2.VideoCapture(video)
+    count = 0
+    print("[Info] Extracting frames from video \n Please be patient")
     while True:
-        print("\n\t\tVIDEO STEGANOGRAPHY OPERATIONS") 
-        print("1. Encode the Text message")  
-        print("2. Decode the Text message")  
-        print("3. Exit")  
-        choice1 = int(input("Enter the Choice:"))   
-        if choice1 == 1:
-            a=encode_vid_data()
-        elif choice1 == 2:
-            decode_vid_data(a)
-        elif choice1 == 3:
+        success, image = vidcap.read()
+        if not success:
             break
-        else:
-            print("Incorrect Choice")
-        print("\n")
+        cv2.imwrite(os.path.join(temp_folder, "{:d}.png".format(count)), image)
+        count += 1
+    print("[INFO] All frames are extrated from value")
+
+def encode_string(secret, frame_number, lsb, root ="./tmp"):
+    filename = os.path.join(root, frame_number + '.png')
+    encoded_image = image_steganography.png_encode(filename, secret, lsb)
+    cv2.imwrite(filename, encoded_image)
+    call(["ffmpeg", "-i", "tmp/%d.png", "-c:v", "libx264rgb", "-crf", "0", "-preset", "faster", "lossless.mp4"], stdout = open(os.devnull, "w"), stderr=STDOUT)
+
+def clean_tmp(path = "./tmp"):
+    if os.path.exists(path):
+        shutil.rmtree(path)
+        print("[INFO] tmp files are cleaned up")
+
+def encode_video(video, secret, frame_number, lsb):
+    no_of_frames = count_frames(video)
+    if int(frame_number) < 0 or int(frame_number) > no_of_frames:
+        raise ValueError("Frame Number is out of bounds")
+    frame_extraction(video)
+    encode_string(secret, frame_number, lsb)
+    clean_tmp()
+
+def decode_video(video, frame_number, lsb):
+    no_of_frames = count_frames(video)
+    if int(frame_number) < 0 or int(frame_number) > no_of_frames:
+        raise ValueError("Frame Number is out of bounds")
+    frame_extraction(video)
+    encoded_frame = os.path.join("./tmp", frame_number + '.png')
+    secret = image_steganography.png_decode(encoded_frame, lsb)
+    clean_tmp()
+    return secret
 
 
-vid_steg()
+# encode_video("cover_video.mp4", "Hello, I have a very big cock", "2", 1)
+# secret = decode_video("lossless.mp4", "2", 1)
+# print(secret)

@@ -11,6 +11,7 @@ import cv2
 import image_steganography as ims
 import document_steganography as dms
 import audio_steganography as auds
+import archives.video_steganography as vids
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -18,7 +19,7 @@ supported_types = {
     '.bmp': (ims.bmp_encode, ims.bmp_decode),
     '.wav': None,
     '.mp3': None,
-    '.mp4': None,
+    '.mp4': (vids.encode_vid_data, vids.decode_vid_data),
     '.txt': (dms.decode),
     '.xls': None,
     '.doc': None
@@ -64,7 +65,7 @@ class MainMenu(customtkinter.CTkFrame):
         self.img_steg_button = customtkinter.CTkButton(self, text = "Audio Steganography", command = lambda : controller.show_frame(AudioPage))
         self.img_steg_button.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
 
-        self.img_steg_button = customtkinter.CTkButton(self, text = "Video Steganography", command = lambda : controller.show_frame(ImagePage))
+        self.img_steg_button = customtkinter.CTkButton(self, text = "Video Steganography", command = lambda : controller.show_frame(VideoPage))
         self.img_steg_button.grid(row=4, column=0, padx=20, pady=5, sticky="ew")
 
 class ImagePage(customtkinter.CTkFrame):
@@ -310,6 +311,76 @@ class AudioPage(customtkinter.CTkFrame):
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
 
+class VideoPage(customtkinter.CTkFrame):
+    def __init__(self, master, controller, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.grid_columnconfigure((0, 1), weight = 1)
+
+        self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
+        self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
+
+        self.label = customtkinter.CTkLabel(self, text = "Video Steganography", font = customtkinter.CTkFont(size = 20, weight = "bold"))
+        self.label.grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text = "Settings", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 2, column = 0, padx = 20, pady = 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text = "Set Frame Number to Encode Secret in", font = customtkinter.CTkFont(size = 15))
+        self.label.grid(row = 3, column = 0, padx = 20, pady = 2, columnspan = 2)
+        self.frame_option = customtkinter.CTkEntry(self, placeholder_text="Frame Number")
+        self.frame_option.grid(row = 4, column = 0, padx = 20, pady = (10, 10), columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text = "Cover", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 5, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop a Video here to upload", command = self.cover_on_change)
+        self.upload_button.grid(row = 6, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
+        self.upload_button.drop_target_register(DND_FILES)
+        self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
+
+        self.label = customtkinter.CTkLabel(self, text = "Secret Message", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 7, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
+
+        self.encode_button = customtkinter.CTkButton(self, text = "Encode Video", command = self.encode_video)
+        self.encode_button.grid(row = 9, column = 0, padx = 20, pady = 10)
+
+        self.decode_button = customtkinter.CTkButton(self, text = "Decode Video", command = self.decode_video)
+        self.decode_button.grid(row = 9, column = 1, padx = 20, pady = 10)
+
+    def cover_on_drop(self, event):
+        self.coverPath = get_drop(event, supported_types)
+        if self.coverPath is not None:
+            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
+            self.success_label.grid(row = 10, column = 0)
+    
+    def cover_on_change(self):
+        self.coverPath = get_path(['', '*' + key] for key in supported_types.keys())
+        if self.coverPath is not None:
+            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
+            self.success_label.grid(row = 10, column = 0)
+    
+    def encode_video(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Pleae select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+        self.save_as(ext)
+
+    def decode_video(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
+            return
+        _, ext = os.path.splitext(self.coverPath)
+        text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get())
+        self.secret_message.delete('1.0', tk.END)
+        self.secret_message.insert('1.0', text)
+
+
+
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
     def __init__(self):
         super().__init__()
@@ -324,7 +395,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         container.grid_columnconfigure(0, weight = 1)
         self.frames = {}
         
-        for F in (MainMenu, ImagePage, DocumentPage, AudioPage):
+        for F in (MainMenu, ImagePage, DocumentPage, AudioPage, VideoPage):
             frame = F(container, self)
 
             self.frames[F] = frame
