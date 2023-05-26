@@ -12,7 +12,7 @@ import image_steganography as ims
 import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
-import archives.video_steganography as vids
+import video_steganography as vids
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -20,7 +20,7 @@ supported_types = {
     '.bmp': (ims.bmp_encode, ims.bmp_decode),
     '.wav': None,
     '.mp3': None,
-    '.mp4': (vids.encode_vid_data, vids.decode_vid_data),
+    '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xls': None,
     '.doc': None
@@ -105,7 +105,7 @@ class ImagePage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 7, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
         self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
 
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Image", command = self.encode_image)
@@ -221,7 +221,7 @@ class DocumentPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 4, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
         self.secret_message.grid(row = 5, column = 0, sticky = 'w', columnspan = 2)
 
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Document", command = self.encode_document)
@@ -288,7 +288,7 @@ class AudioPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 4, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
         self.secret_message.grid(row = 5, column = 0, sticky = 'w', columnspan = 2)
 
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Audio", command = self.encode_audio)
@@ -353,9 +353,14 @@ class VideoPage(customtkinter.CTkFrame):
         self.label.grid(row = 2, column = 0, padx = 20, pady = 10, columnspan = 2)
 
         self.label = customtkinter.CTkLabel(self, text = "Set Frame Number to Encode Secret in", font = customtkinter.CTkFont(size = 15))
-        self.label.grid(row = 3, column = 0, padx = 20, pady = 2, columnspan = 2)
+        self.label.grid(row = 3, column = 0, padx = 5, pady = 2)
         self.frame_option = customtkinter.CTkEntry(self, placeholder_text="Frame Number")
-        self.frame_option.grid(row = 4, column = 0, padx = 20, pady = (10, 10), columnspan = 2)
+        self.frame_option.grid(row = 4, column = 0, padx = 5, pady = (10, 10))
+
+        self.label = customtkinter.CTkLabel(self, text = "Set Number of Bits", font = customtkinter.CTkFont(size = 15))
+        self.label.grid(row = 3, column = 1, padx = 5, pady = 2)
+        self.bits_option_menu = customtkinter.CTkOptionMenu(self, values = ["1", "2", "3", "4", "5"])
+        self.bits_option_menu.grid(row = 4, column = 1, padx = 5, pady = (10, 10))
 
         self.label = customtkinter.CTkLabel(self, text = "Cover", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 5, column = 0, padx = 20, pady = 10, columnspan = 2)
@@ -366,7 +371,7 @@ class VideoPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text = "Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 7, column = 0, padx = 20, pady = 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 400)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
         self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
 
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Video", command = self.encode_video)
@@ -393,7 +398,7 @@ class VideoPage(customtkinter.CTkFrame):
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+        supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
         self.save_as(ext)
 
     def decode_video(self):
@@ -401,9 +406,15 @@ class VideoPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
-        text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get())
+        text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get(), self.bits_option_menu.get())
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
+
+    def save_as(self, ext):
+        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All files", "*.*")])
+        if filename:
+            if filename.endswith(('.mp4')):
+                vids.save_as(filename)
 
 
 
@@ -413,7 +424,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.TkdndVersion = TkinterDnD._require(self)
 
         self.title("I am a stegosaurus")
-        self.geometry("400x700")
+        self.geometry("450x700")
 
         container = customtkinter.CTkFrame(master=self)
         container.pack(side = "top", fill = "both", expand = True)

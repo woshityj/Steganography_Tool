@@ -30,7 +30,10 @@ def encode_string(secret, frame_number, lsb, root ="./tmp"):
     filename = os.path.join(root, frame_number + '.png')
     encoded_image = image_steganography.png_encode(filename, secret, lsb)
     cv2.imwrite(filename, encoded_image)
-    call(["ffmpeg", "-i", "tmp/%d.png", "-c:v", "libx264rgb", "-crf", "0", "-preset", "faster", "lossless.mp4"], stdout = open(os.devnull, "w"), stderr=STDOUT)
+
+def save_as(filename):
+    call(["ffmpeg", "-i", "tmp/%d.png", "-c:v", "libx264rgb", "-crf", "0", "-preset", "faster", f"{filename}.mp4"], stdout = open(os.devnull, "w"), stderr=STDOUT)
+    clean_tmp()
 
 def clean_tmp(path = "./tmp"):
     if os.path.exists(path):
@@ -42,8 +45,7 @@ def encode_video(video, secret, frame_number, lsb):
     if int(frame_number) < 0 or int(frame_number) > no_of_frames:
         raise ValueError("Frame Number is out of bounds")
     frame_extraction(video)
-    encode_string(secret, frame_number, lsb)
-    clean_tmp()
+    encode_string(secret, frame_number, int(lsb))
 
 def decode_video(video, frame_number, lsb):
     no_of_frames = count_frames(video)
@@ -51,7 +53,7 @@ def decode_video(video, frame_number, lsb):
         raise ValueError("Frame Number is out of bounds")
     frame_extraction(video)
     encoded_frame = os.path.join("./tmp", frame_number + '.png')
-    secret = image_steganography.png_decode(encoded_frame, lsb)
+    secret = image_steganography.png_decode(encoded_frame, int(lsb))
     clean_tmp()
     return secret
 
