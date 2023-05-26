@@ -22,25 +22,14 @@ def gif_encode(path, msg, bit):
     data_index = 0
     # size of data to hide
     data_len = len(binary_secret_data)
-    print(f"Number of secret bits: {data_len}")
-    print(f"binary: {binary_secret_data}")
-    print(f"number of frames: {len(frames)}")
     # return list
     out_frames = []
-    # debugging
-    count = 0
     for frame in frames:
         # if no data to insert, directly add the frame to return list
-        if data_index >= data_len:
-            print(f"skipping frame {count}")
-            count += 1
-        else:
-            print(f"reforming frame {count}")
-            count += 1
-
+        if data_index < data_len:
             # do LSB for frame
-            for col in range(frame.width):
-                for row in range(frame.height):
+            for row in range(frame.height):
+                for col in range(frame.width):
                     if data_index < data_len:
                         binary_rgb = ims.to_bin(frame.getpixel((col, row)))
                         rgb = [binary_rgb[0]]
@@ -62,32 +51,26 @@ def gif_encode(path, msg, bit):
     return out_frames
 
 
-def decode(path, bit):
+def gif_decode(path, bit):
     frames = get_all_frames(path)
     binary_data = ""
     decoded_data = ""
     # for each frame, get the last x bit to binary_data
     for frame in frames:
-        for col in range(frame.width):
-            for row in range(frame.height):
+        for row in range(frame.height):
+            for col in range(frame.width):
                 binary_rgb = ims.to_bin(frame.getpixel((col, row)))
                 for i in range(1, 3):
                     binary_data += binary_rgb[i][-bit:]
                 if len(binary_data) >= 8:
                     # convert to chr
                     decoded_data += chr(int(binary_data[:8], 2))
-                    if len(decoded_data) > 100:
-                        return
                     # check if obtained all data
                     if decoded_data.endswith("====="):
                         return decoded_data[:-5]
                     binary_data = binary_data[8:]
 
 
-def save_gif(frames, path):
-    frames[0].save(path, save_all=True, append_images=frames[1:], duration=frames[0].info['duration'], loop=0)
+def gif_save(frames, path):
+    frames[0].save(path, save_all=True, append_images=frames[1:])
 
-
-save_gif(gif_encode("testingfiles/cat.gif", "Lorem ipsum dolor sit amet, consectetur adipiscing "
-                                                        "elit.", 1), "testingfiles/encoded_cat.gif")
-print(f"message: {decode('testingfiles/encoded_cat.gif', 1)}")
