@@ -5,8 +5,13 @@ import image_steganography as ims
 def get_all_frames(path):
     img = Image.open(path)
     frames = []
+    # try:
+    #     print(img.info['transparency'])
+    #     convert_rule = "RGBA"
+    # except KeyError:
+    convert_rule = "RGB"
     for frame in ImageSequence.Iterator(img):
-        frames.append(frame.convert('RGB'))
+        frames.append(frame.convert(convert_rule))
     return frames
 
 
@@ -72,5 +77,5 @@ def gif_decode(path, bit):
 
 
 def gif_save(frames, path):
-    frames[0].save(path, save_all=True, append_images=frames[1:])
+    frames[0].save(path, save_all=True, append_images=frames[1:], disposal=2)
 
