@@ -8,7 +8,7 @@ def to_bin(data):
         return ''.join([ format(ord(i), "08b") for i in data ])
     elif isinstance(data, bytes):
         return ''.join([ format(i, "08b") for i in data ])
-    elif isinstance(data, np.ndarray) or isinstance(data, tuple):
+    elif isinstance(data, np.ndarray) or isinstance(data, list) or isinstance(data, tuple):
         return [ format(i, "08b") for i in data ]
     elif isinstance(data, int) or isinstance(data, np.uint8):
         return format(data, "08b")
