@@ -18,8 +18,8 @@ supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
     '.gif': (gis.gif_encode, gis.gif_decode),
     '.bmp': (ims.bmp_encode, ims.bmp_decode),
-    '.wav': None,
-    '.mp3': None,
+    '.wav': (auds.encode_aud_data, auds.decode_aud_data),
+    '.mp3': (auds.encode_aud_data, auds.decode_aud_data),
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xls': None,
@@ -323,19 +323,33 @@ class AudioPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         text = auds.decode_aud_data(self.coverPath)
+        _, ext = os.path.splitext(self.coverPath)
+        os.remove(_ + ".wav")
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
     def save_as(self, ext, secret = None):
         # save as prompt
-        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
+        filename = asksaveasfilename(defaultextension='wav', filetypes=[("Same as original", 'wav'), ("All Files", "*.*")])
+        print(ext)
         if filename:
-            if filename.endswith(('.wav')):
+            if filename.endswith(('.wav')) and ext != ".mp3":
                 song = wave.open(self.coverPath, mode = 'rb')
                 with wave.open(filename, 'wb') as fd:
                     fd.setparams(song.getparams())
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
+            elif ext == ".mp3":
+                _, ext = os.path.splitext(filename)
+                temp_file_name, ext = os.path.splitext(self.coverPath)
+                song = wave.open(temp_file_name + ".wav", mode = 'rb')
+                with wave.open(filename, 'wb') as fd:
+                    fd.setparams(song.getparams())
+                    fd.writeframes(self.encoded)
+                    print("\nEncoded the data successfully in the audio file")
+                auds.convertWAVToMP3(filename)
+                os.remove(filename)
+                os.remove(temp_file_name + ".wav")
 
 class VideoPage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
