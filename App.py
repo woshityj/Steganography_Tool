@@ -326,7 +326,7 @@ class AudioPage(customtkinter.CTkFrame):
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.sb_num.get()))
+        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
         self.save_as(ext)
 
     def decode_audio(self):
