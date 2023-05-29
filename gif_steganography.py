@@ -1,5 +1,5 @@
 from PIL import Image, ImageSequence
-import image_steganography as ims
+from steganograpy_utility import to_bin
 
 
 def get_all_frames(path):
@@ -23,7 +23,7 @@ def gif_encode(path, msg, bit):
     # add stopping criteria
     msg += "====="
     # data to binary
-    binary_secret_data = ims.to_bin(msg)
+    binary_secret_data = to_bin(msg)
     data_index = 0
     # size of data to hide
     data_len = len(binary_secret_data)
@@ -36,7 +36,7 @@ def gif_encode(path, msg, bit):
                 if data_index >= data_len:
                     return frames
                 # else read current pixel and add data
-                rgb = ims.to_bin(frames[fn].getpixel((row, col)))
+                rgb = to_bin(frames[fn].getpixel((row, col)))
                 for i in range(1, 3):  # skip r value as tested unstable
                     data = ""
                     for b in range(bit):  # determine how many bits to put in pixels
@@ -60,7 +60,7 @@ def gif_decode(path, bit):
             # for each frame:
             for fn in range(len(frames)):
                 # else read current pixel and add data
-                rgb = ims.to_bin(frames[fn].getpixel((row, col)))
+                rgb = to_bin(frames[fn].getpixel((row, col)))
                 for i in range(1, 3):  # skip r value as tested unstable
                     binary_data += rgb[i][-bit:]
                 if len(binary_data) >= 8:

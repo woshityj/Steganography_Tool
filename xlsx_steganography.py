@@ -1,13 +1,6 @@
 from openpyxl import load_workbook
 from openpyxl.styles import Font
-
-
-def to_bin(data):
-    """Convert `data` to binary format as string"""
-    if isinstance(data, str):
-        return ''.join([format(ord(i), "08b") for i in data])
-    else:
-        raise TypeError("Type not supported.")
+from steganograpy_utility import to_bin
 
 
 def encode(path, msg, bit):
