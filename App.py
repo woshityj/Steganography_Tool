@@ -13,6 +13,7 @@ import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
+import word_doc_steganography as wds
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -23,7 +24,7 @@ supported_types = {
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xls': None,
-    '.doc': None
+    '.docx': None
 }
 
 
@@ -247,17 +248,27 @@ class DocumentPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
+        print(ext)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        secret_text = dms.secret(self.payloadText)
-        self.save_as(ext, secret = secret_text)
+        if ext == ".docx":
+            wds.hiddenParagraphTest(self.coverPath, self.payloadText)
+        else:
+            secret_text = dms.secret(self.payloadText)
+            self.save_as(ext, secret = secret_text)
 
     def decode_document(self):
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
-        text = dms.decode(self.coverPath)
-        self.secret_message.delete('1.0', tk.END)
-        self.secret_message.insert('1.0', text)
+        _, ext = os.path.splitext(self.coverPath)
+        if ext == ".docx":
+            text = wds.findParagraph(self.coverPath)
+            self.secret_message.delete('1.0', tk.END)
+            self.secret_message.insert('1.0', text)
+        else:
+            text = dms.decode(self.coverPath)
+            self.secret_message.delete('1.0', tk.END)
+            self.secret_message.insert('1.0', text)
     
     def save_as(self, ext, secret = None):
         # save as prompt
