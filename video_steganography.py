@@ -25,6 +25,8 @@ def frame_extraction(video):
         cv2.imwrite(os.path.join(temp_folder, "{:d}.png".format(count)), image)
         count += 1
     print("[INFO] All frames are extrated from value")
+    call(["ffmpeg", "-i", f"{video}", "-q:a", "0", "-map", "a", "tmp/audio.mp3"])
+    print("\n[INFO] Extracting audio from video")
 
 def encode_string(secret, frame_number, lsb, root ="./tmp"):
     filename = os.path.join(root, frame_number + '.png')
@@ -32,7 +34,8 @@ def encode_string(secret, frame_number, lsb, root ="./tmp"):
     cv2.imwrite(filename, encoded_image)
 
 def save_as(filename):
-    call(["ffmpeg", "-i", "tmp/%d.png", "-c:v", "libx264rgb", "-crf", "0", "-preset", "faster", f"{filename}.mp4"], stdout = open(os.devnull, "w"), stderr=STDOUT)
+    call(["ffmpeg", "-i", "tmp/%d.png", "-c:v", "libx264rgb", "-crf", "0", "-preset", "faster", "tmp/video.mp4"], stdout = open(os.devnull, "w"), stderr=STDOUT)
+    call(["ffmpeg", "-i", "tmp/video.mp4", "-i", "tmp/audio.mp3", "-codec", "copy", f"{filename}.mp4", "-y"], stdout = open(os.devnull, "w"), stderr = STDOUT)
     clean_tmp()
 
 def clean_tmp(path = "./tmp"):
@@ -58,6 +61,7 @@ def decode_video(video, frame_number, lsb):
     return secret
 
 
-# encode_video("cover_video.mp4", "Hello, I have a very big cock", "2", 1)
-# secret = decode_video("lossless.mp4", "2", 1)
+# encode_video("testingfiles/best_vid.mp4", "Hello, I have a very big cock", "2", 1)
+# save_as("penis")
+# secret = decode_video("penis.mp4", "2", 1)
 # print(secret)
