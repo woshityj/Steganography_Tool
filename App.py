@@ -163,6 +163,7 @@ class ImagePage(customtkinter.CTkFrame):
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        self.payloadText = ims.encryptMessage(self.payloadText)
         if ext.lower() == '.png' or ext.lower() == '.gif':
             self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
         elif (ext.lower() == '.bmp'):
@@ -176,15 +177,16 @@ class ImagePage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if ext.lower() == '.png' or ext.lower() == '.gif':
             text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
-            print(text)
+            text = ims.decryptMessage(text)
         elif (ext.lower() == '.bmp'):
             text = supported_types[ext.lower()][1](self.coverPath)
+            text = ims.decryptMessage(text)
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
         if self.encoded_image_label is not None:
             self.encoded_image_label.destroy()
-
+            
     def save_as(self, ext):
         # save as prompt
         filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
