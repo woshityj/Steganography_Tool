@@ -1,5 +1,6 @@
 import cv2  
 import numpy as np  
+from steganograpy_utility import to_bin
 
 # converting types to binary  
 
