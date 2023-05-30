@@ -1,9 +1,21 @@
+from pydub import AudioSegment
+import wave
+import os
+
 
 def encode_aud_data(name_of_file, data):
-    import wave
 
-    # name_of_file = input("Enter name of the file (with extension): - ")
-    song = wave.open(name_of_file, mode = 'rb')
+    _, ext = os.path.splitext(name_of_file)
+    if ext == '.mp3':
+        if not os.path.exists("./tmp"):
+            os.makedirs("tmp")
+        convertMP3ToWave(name_of_file)
+        filename = os.path.join("./tmp", _ + '.wav')
+        print(filename)
+        song = wave.open(filename, mode = 'rb')
+    else:
+        # name_of_file = input("Enter name of the file (with extension): - ")
+        song = wave.open(name_of_file, mode = 'rb')
 
     nframes = song.getnframes()
     frames = song.readframes(nframes)
@@ -39,10 +51,17 @@ def encode_aud_data(name_of_file, data):
     return frame_modified
 
 def decode_aud_data(name_of_file):
-    import wave
 
-    # name_of_file = input("Enter name of the file to be decided:- ")
-    song = wave.open(name_of_file, mode = 'rb')
+    _, ext = os.path.splitext(name_of_file)
+    if ext == '.mp3':
+        if not os.path.exists("./tmp"):
+            os.makedirs("tmp")
+        convertMP3ToWave(name_of_file)
+        filename = os.path.join("./tmp", _ + '.wav')
+        song = wave.open(filename, mode = 'rb')
+    else:
+        # name_of_file = input("Enter name of the file to be decided:- ")
+        song = wave.open(name_of_file, mode = 'rb')
 
     nframes = song.getnframes()
     frames = song.readframes(nframes)
@@ -69,3 +88,12 @@ def decode_aud_data(name_of_file):
                 p = 1
                 return decoded_data[:-5]
     
+def convertWAVToMP3(name_of_file):
+    audio_segment = AudioSegment.from_file(name_of_file)
+    _, ext = os.path.splitext(name_of_file)
+    audio_segment.export(os.path.join("./tmp", _ + '.mp3'), format = "wav")
+
+def convertMP3ToWave(name_of_file):
+    audio_segment = AudioSegment.from_file(name_of_file)
+    _, ext = os.path.splitext(name_of_file)
+    audio_segment.export(os.path.join("./tmp", _ + '.wav'), format = "wav")

@@ -13,17 +13,18 @@ import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
+import word_doc_steganography as wds
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
     '.gif': (gis.gif_encode, gis.gif_decode),
     '.bmp': (ims.bmp_encode, ims.bmp_decode),
-    '.wav': None,
-    '.mp3': None,
+    '.wav': (auds.encode_aud_data, auds.decode_aud_data),
+    '.mp3': (auds.encode_aud_data, auds.decode_aud_data),
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xls': None,
-    '.doc': None
+    '.docx': None
 }
 
 
@@ -162,6 +163,7 @@ class ImagePage(customtkinter.CTkFrame):
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        self.payloadText = ims.encryptMessage(self.payloadText)
         if ext.lower() == '.png' or ext.lower() == '.gif':
             self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
         elif (ext.lower() == '.bmp'):
@@ -175,15 +177,16 @@ class ImagePage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if ext.lower() == '.png' or ext.lower() == '.gif':
             text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
-            print(text)
+            text = ims.decryptMessage(text)
         elif (ext.lower() == '.bmp'):
             text = supported_types[ext.lower()][1](self.coverPath)
+            text = ims.decryptMessage(text)
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
         if self.encoded_image_label is not None:
             self.encoded_image_label.destroy()
-
+            
     def save_as(self, ext):
         # save as prompt
         filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
@@ -247,17 +250,27 @@ class DocumentPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
+        print(ext)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        secret_text = dms.secret(self.payloadText)
-        self.save_as(ext, secret = secret_text)
+        if ext == ".docx":
+            wds.hiddenParagraphTest(self.coverPath, self.payloadText)
+        else:
+            secret_text = dms.secret(self.payloadText)
+            self.save_as(ext, secret = secret_text)
 
     def decode_document(self):
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
-        text = dms.decode(self.coverPath)
-        self.secret_message.delete('1.0', tk.END)
-        self.secret_message.insert('1.0', text)
+        _, ext = os.path.splitext(self.coverPath)
+        if ext == ".docx":
+            text = wds.findParagraph(self.coverPath)
+            self.secret_message.delete('1.0', tk.END)
+            self.secret_message.insert('1.0', text)
+        else:
+            text = dms.decode(self.coverPath)
+            self.secret_message.delete('1.0', tk.END)
+            self.secret_message.insert('1.0', text)
     
     def save_as(self, ext, secret = None):
         # save as prompt
@@ -315,7 +328,7 @@ class AudioPage(customtkinter.CTkFrame):
             return
         _, ext = os.path.splitext(self.coverPath)
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.sb_num.get()))
+        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
         self.save_as(ext)
 
     def decode_audio(self):
@@ -323,19 +336,33 @@ class AudioPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         text = auds.decode_aud_data(self.coverPath)
+        _, ext = os.path.splitext(self.coverPath)
+        os.remove(_ + ".wav")
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
     def save_as(self, ext, secret = None):
         # save as prompt
-        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
+        filename = asksaveasfilename(defaultextension='wav', filetypes=[("Same as original", 'wav'), ("All Files", "*.*")])
+        print(ext)
         if filename:
-            if filename.endswith(('.wav')):
+            if filename.endswith(('.wav')) and ext != ".mp3":
                 song = wave.open(self.coverPath, mode = 'rb')
                 with wave.open(filename, 'wb') as fd:
                     fd.setparams(song.getparams())
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
+            elif ext == ".mp3":
+                _, ext = os.path.splitext(filename)
+                temp_file_name, ext = os.path.splitext(self.coverPath)
+                song = wave.open(temp_file_name + ".wav", mode = 'rb')
+                with wave.open(filename, 'wb') as fd:
+                    fd.setparams(song.getparams())
+                    fd.writeframes(self.encoded)
+                    print("\nEncoded the data successfully in the audio file")
+                auds.convertWAVToMP3(filename)
+                os.remove(filename)
+                os.remove(temp_file_name + ".wav")
 
 class VideoPage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
