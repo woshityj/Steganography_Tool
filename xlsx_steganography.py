@@ -51,7 +51,6 @@ def decode(path, bit):
             binary_msg += binary_color[-bit:]
             if len(binary_msg) >= 8:
                 msg += chr(int(binary_msg[:8], 2))
-                print(msg)
                 if msg.endswith("====="):
                     return msg[:-5]
                 binary_msg = binary_msg[8:]
