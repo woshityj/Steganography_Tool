@@ -14,8 +14,9 @@ import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
 # import word_doc_steganography as wds
-import word_steganography as wd_lsb_s
+# import word_steganography as wd_lsb_s
 import xlsx_steganography as xls
+import encrypt as enc
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -26,7 +27,7 @@ supported_types = {
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xlsx': (xls.encode, xls.decode),
-    '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
+    # '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
 }
 
 
@@ -193,7 +194,7 @@ class ImagePage(customtkinter.CTkFrame):
             return
         
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        self.payloadText = ims.encryptMessage(self.payloadText)
+        self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
         try:
             if ext.lower() == '.png' or ext.lower() == '.gif' or ext.lower() == '.bmp':
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
@@ -211,12 +212,12 @@ class ImagePage(customtkinter.CTkFrame):
             return
         
         _, ext = os.path.splitext(self.coverPath)
-        if ext.lower() == '.png' or ext.lower() == '.gif':
+        if ext.lower() == '.png' or ext.lower() == '.gif' or ext.lower() == '.bmp':
             text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
-            text = ims.decryptMessage(text)
-        elif (ext.lower() == '.bmp'):
-            text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
-            text = ims.decryptMessage(text)
+            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if text == 0:
+                messagebox.showerror("Error", "Wrong Key")
+                return
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
@@ -335,6 +336,7 @@ class DocumentPage(customtkinter.CTkFrame):
                 pass
             else:
                 try:
+                    self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
                     self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
                 except ValueError as e:
                     messagebox.showerror("Error", str(e))
@@ -351,6 +353,7 @@ class DocumentPage(customtkinter.CTkFrame):
             self.save_as(ext, secret = self.payloadText)
         elif ext == ".xlsx":
             try:
+                self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
             except ValueError as e:
                 messagebox.showerror("Error", str(e))
@@ -366,12 +369,16 @@ class DocumentPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if ext == ".docx":
             if self.switch.get() == "on":
-                text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
+                # text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
                 # text = wds.findParagraph(self.coverPath)
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
         elif ext == ".txt":
             text = dms.decode(self.coverPath)
+            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if text == 0:
+                messagebox.showerror("Error", "Wrong Key")
+                return
             self.secret_message.delete('1.0', tk.END)
             self.secret_message.insert('1.0', text)
         elif ext == ".xlsx":
@@ -390,8 +397,8 @@ class DocumentPage(customtkinter.CTkFrame):
             if filename.endswith(('.txt')):
                 dms.encode(self.coverPath, filename, secret)
                 print("\nEncoded the data successfully in the document file")
-            elif filename.endswith(('.docx')):
-                wd_lsb_s.save(filename, self.encoded)
+            # elif filename.endswith(('.docx')):
+                # wd_lsb_s.save(filename, self.encoded)
             elif filename.endswith(('.xlsx')):
                 xls.save(filename, self.encoded)
     
@@ -454,6 +461,7 @@ class AudioPage(customtkinter.CTkFrame):
             return
         
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
+        self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
         self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
         self.save_as(ext)
 
@@ -463,6 +471,10 @@ class AudioPage(customtkinter.CTkFrame):
             return
         try:
             text = auds.decode_aud_data(self.coverPath)
+            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if text == 0:
+                messagebox.showerror("Error", "Wrong Key")
+                return
         except Exception:
             messagebox.showerror("Error", "Audio file contains no signs of steganography")
             return
@@ -566,6 +578,7 @@ class VideoPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please enter a secret message")
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         try:
+            self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
             supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
         except ValueError as e:
             messagebox.showerror("Error", str(e))
@@ -585,6 +598,10 @@ class VideoPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         try:
             text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get(), self.bits_option_menu.get())
+            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if text == 0:
+                messagebox.showerror("Error", "Wrong Key")
+                return
         except ValueError as e:
             messagebox.showerror("Error", str(e))
             vids.clean_tmp()
