@@ -18,6 +18,7 @@ def get_all_frames(path):
 def gif_encode(path, msg, bit):
     frames = get_all_frames(path)
     max_byte = frames[0].height * frames[0].width * len(frames) * bit // 8
+    print(max_byte)
     if len(msg) > max_byte:
         raise ValueError("[!] Insufficient bytes, need bigger image or less data.")
     # add stopping criteria

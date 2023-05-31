@@ -158,22 +158,37 @@ class ImagePage(customtkinter.CTkFrame):
         self.after(self.gif.info['duration'], self.play_gif, fn)
 
     def encode_image(self):
+        # Error Handling if the User has not select a Cover File
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
+        
         _, ext = os.path.splitext(self.coverPath)
+
+        if len(self.secret_message.get('1.0', 'end-1c')) == 0:
+            messagebox.showerror("Error", "Please enter a secret message.")
+            return
+        
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         self.payloadText = ims.encryptMessage(self.payloadText)
-        if ext.lower() == '.png' or ext.lower() == '.gif':
-            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
-        elif (ext.lower() == '.bmp'):
-            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+        try:
+            if ext.lower() == '.png' or ext.lower() == '.gif':
+                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+            elif (ext.lower() == '.bmp'):
+                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+                
+        # Error Handling if the payload is too large to keep in the Cover File
+        except ValueError:
+            messagebox.showerror("error", "Insufficient bytes, need a bigger image or reduce payload")
+            return
         self.save_as(ext)
     
     def decode_image(self):
+        # Error Handling if the User has not select a Cover File
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
+        
         _, ext = os.path.splitext(self.coverPath)
         if ext.lower() == '.png' or ext.lower() == '.gif':
             text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))

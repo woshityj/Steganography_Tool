@@ -3,9 +3,6 @@ import numpy as np
 import math
 from steganograpy_utility import to_bin
 
-# converting types to binary  
-
-  
 def png_encode(image_name, secret_data, lsb_bits):
     # read the image
     image = cv2.imread(image_name)
