@@ -13,7 +13,7 @@ import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
-import word_doc_steganography as wds
+# import word_doc_steganography as wds
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -188,11 +188,9 @@ class ImagePage(customtkinter.CTkFrame):
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         self.payloadText = ims.encryptMessage(self.payloadText)
         try:
-            if ext.lower() == '.png' or ext.lower() == '.gif':
+            if ext.lower() == '.png' or ext.lower() == '.gif' or ext.lower() == '.bmp':
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
-            elif (ext.lower() == '.bmp'):
-                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
-
+                
         # Error Handling if the payload is too large to keep in the Cover File
         except ValueError:
             messagebox.showerror("Error", "Insufficient bytes, need a bigger image or reduce payload")
@@ -210,7 +208,7 @@ class ImagePage(customtkinter.CTkFrame):
             text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
             text = ims.decryptMessage(text)
         elif (ext.lower() == '.bmp'):
-            text = supported_types[ext.lower()][1](self.coverPath)
+            text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
             text = ims.decryptMessage(text)
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
@@ -234,7 +232,15 @@ class ImagePage(customtkinter.CTkFrame):
                 self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
                 self.encoded_image_label.grid(row = 11, column = 1)
-            if filename.endswith('.gif'):
+            elif filename.endswith(('.bmp')):
+                # save image
+                with open(filename, "wb") as image:
+                    image.write(self.encoded)
+                # show image as per requested in spec
+                self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
+                self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
+                self.encoded_image_label.grid(row = 11, column = 1)
+            elif filename.endswith('.gif'):
                 gis.gif_save(self.encoded, filename)
                 # show gif
                 self.encoded_gif = Image.open(filename)
@@ -302,7 +308,8 @@ class DocumentPage(customtkinter.CTkFrame):
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
 
         if ext == ".docx":
-            wds.hiddenParagraphTest(self.coverPath, self.payloadText)
+            pass
+            # wds.hiddenParagraphTest(self.coverPath, self.payloadText)
         else:
             # Error Handling if the Secret can fit into the Cover File
             max_no_of_bytes = dms.max_number_of_bytes(self.coverPath)
@@ -319,7 +326,7 @@ class DocumentPage(customtkinter.CTkFrame):
         
         _, ext = os.path.splitext(self.coverPath)
         if ext == ".docx":
-            text = wds.findParagraph(self.coverPath)
+            # text = wds.findParagraph(self.coverPath)
             self.secret_message.delete('1.0', tk.END)
             self.secret_message.insert('1.0', text)
         else:

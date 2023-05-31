@@ -81,7 +81,7 @@ def png_decode(image_name, lsb_bits):
             break
     return decoded_data[:-5]
 
-def bmp_encode(image_path, data):
+def bmp_encode(image_path, data, lsb_bits):
     # Open the file in binary mode
     with open(image_path, "rb") as image:
         f = image.read()
@@ -94,14 +94,15 @@ def bmp_encode(image_path, data):
     # Append the size of data to the start of data_binary
     data_binary = data_len + data_binary
 
+    hidden_bits = 255 - lsb_bits
     # Append data_binary to image bytes
     for i in range(len(data_binary)):
-        byte_array[i+54] = (byte_array[i+54] & 254) | int(data_binary[i])  # 54 bytes is standard BMP header
+        byte_array[i+54] = (byte_array[i+54] & hidden_bits) | int(data_binary[i])  # 54 bytes is standard BMP header
 
     return byte_array
 
 
-def bmp_decode(image_path):
+def bmp_decode(image_path, lsb_bits):
     # Open the file in binary mode
     with open(image_path, "rb") as image:
         f = image.read()
@@ -110,7 +111,7 @@ def bmp_decode(image_path):
     # Extract the size of original hidden data
     len_str = ""
     for i in range(8):
-        if byte_array[i+54] & 1:
+        if byte_array[i+54] & lsb_bits:
             len_str += '1'
         else:
             len_str += '0'
@@ -119,7 +120,7 @@ def bmp_decode(image_path):
     # Extract data
     data_binary = ""
     for i in range(data_len):
-        if byte_array[i+54+8] & 1:
+        if byte_array[i+54+8] & lsb_bits:
             data_binary += '1'
         else:
             data_binary += '0'
