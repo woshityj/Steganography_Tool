@@ -46,7 +46,10 @@ def decode(path, bit):
     msg = ""
     for row in sheet.iter_rows(min_row=2):
         for cell in row:
-            color = cell.font.color.rgb
+            try:
+                color = cell.font.color.rgb
+            except:
+                raise ValueError("No Steganography found in Excel file")
             binary_color = bin(int(color, 16))[2:].zfill(8)
             binary_msg += binary_color[-bit:]
             if len(binary_msg) >= 8:
@@ -61,18 +64,18 @@ def save(path, wb):
         wb.save(path)
 
 
-save('testingfiles/out.xlsx', encode('testingfiles/SampleData.xlsx', """
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-hello world
-""", 4))
-print(decode('testingfiles/out.xlsx', 4))
+# save('testingfiles/out.xlsx', encode('testingfiles/SampleData.xlsx', """
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# hello world
+# """, 4))
+# print(decode('testingfiles/out.xlsx', 4))

@@ -15,6 +15,7 @@ import gif_steganography as gis
 import video_steganography as vids
 # import word_doc_steganography as wds
 import word_steganography as wd_lsb_s
+import xlsx_steganography as xls
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -24,7 +25,7 @@ supported_types = {
     '.mp3': (auds.encode_aud_data, auds.decode_aud_data),
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
-    '.xls': None,
+    '.xlsx': (xls.encode, xls.decode),
     '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
 }
 
@@ -338,16 +339,23 @@ class DocumentPage(customtkinter.CTkFrame):
                 except ValueError as e:
                     messagebox.showerror("Error", str(e))
                     return
-                self.save_as(ext, secret = self.payloadText)
+                self.save_as(ext)
             pass
             # wds.hiddenParagraphTest(self.coverPath, self.payloadText)
-        else:
+        elif ext == ".txt":
             # Error Handling if the Secret can fit into the Cover File
             max_no_of_bytes = dms.max_number_of_bytes(self.coverPath)
             if dms.check_secret_can_fit(max_no_of_bytes, self.payloadText) == False:
                 messagebox.showerror("Error", "Insufficient bytes, need a bigger text file or reduce payload")
                 return
             self.save_as(ext, secret = self.payloadText)
+        elif ext == ".xlsx":
+            try:
+                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+            except ValueError as e:
+                messagebox.showerror("Error", str(e))
+                return
+            self.save_as(ext)
 
     def decode_document(self):
         # Error Handling if the User has not select a Cover File
@@ -362,8 +370,16 @@ class DocumentPage(customtkinter.CTkFrame):
                 # text = wds.findParagraph(self.coverPath)
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
-        else:
+        elif ext == ".txt":
             text = dms.decode(self.coverPath)
+            self.secret_message.delete('1.0', tk.END)
+            self.secret_message.insert('1.0', text)
+        elif ext == ".xlsx":
+            try:
+                text = xls.decode(self.coverPath, int(self.bits_option_menu.get()))
+            except ValueError as e: 
+                messagebox.showerror("Error", str(e))
+                return
             self.secret_message.delete('1.0', tk.END)
             self.secret_message.insert('1.0', text)
     
@@ -376,6 +392,8 @@ class DocumentPage(customtkinter.CTkFrame):
                 print("\nEncoded the data successfully in the document file")
             elif filename.endswith(('.docx')):
                 wd_lsb_s.save(filename, self.encoded)
+            elif filename.endswith(('.xlsx')):
+                xls.save(filename, self.encoded)
     
 class AudioPage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
