@@ -14,6 +14,7 @@ import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
 # import word_doc_steganography as wds
+import word_steganography as wd_lsb_s
 
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
@@ -24,7 +25,7 @@ supported_types = {
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xls': None,
-    '.docx': None
+    '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
 }
 
 
@@ -110,20 +111,25 @@ class ImagePage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 7, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
-        self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 500)
+        self.secret_message.grid(row = 8, column = 0, sticky = 'w', pady = 10, columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text = "Key", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 9, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.key_message = customtkinter.CTkTextbox(self, height = 40, width = 500)
+        self.key_message.grid(row = 10, column = 0, sticky = 'w', pady = 10, columnspan = 2)
 
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Image", command = self.encode_image)
-        self.encode_button.grid(row = 9, column = 0, padx = 20, pady = 10)
+        self.encode_button.grid(row = 11, column = 0, padx = 20, pady = 10)
 
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Image", command = self.decode_image)
-        self.decode_button.grid(row = 9, column = 1, padx = 20, pady = 10)
+        self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
         self.label = customtkinter.CTkLabel(self, text="Uploaded Image", font = customtkinter.CTkFont(size = 20))
-        self.label.grid(row = 10, column = 0, padx = 20, pady= 10, columnspan = 1)
+        self.label.grid(row = 12, column = 0, padx = 20, pady= 10, columnspan = 1)
 
         self.label = customtkinter.CTkLabel(self, text="Encoded Image", font = customtkinter.CTkFont(size = 20))
-        self.label.grid(row = 10, column = 1, padx = 20, pady= 10, columnspan = 1)
+        self.label.grid(row = 12, column = 1, padx = 20, pady= 10, columnspan = 1)
 
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
@@ -144,7 +150,7 @@ class ImagePage(customtkinter.CTkFrame):
             self.gif_label.grid_forget()
             self.uploaded_image = customtkinter.CTkImage(Image.open(coverPath), size = (100, 100))
             self.image_label = customtkinter.CTkLabel(self, image = self.uploaded_image, text = "")
-            self.image_label.grid(row = 11, column = 0)
+            self.image_label.grid(row = 13, column = 0)
 
             # self.success_label = customtkinter.CTkLabel(self, text ="Successfully uploaded file")
             # self.success_label.grid(row = 12, column = 0)
@@ -154,7 +160,7 @@ class ImagePage(customtkinter.CTkFrame):
             self.gif = Image.open(coverPath)
             self.frames = [tk.PhotoImage(file=coverPath, format='gif -index %i' % i) for i in range(self.gif.n_frames)]
             self.gif_label = tk.Label(self, image=self.frames[0], text="", height=100, width=100)
-            self.gif_label.grid(row = 11, column = 0)
+            self.gif_label.grid(row = 13, column = 0)
             self.after(0, self.play_gif, 0)
 
     def play_gif(self, fn):
@@ -231,7 +237,7 @@ class ImagePage(customtkinter.CTkFrame):
                 # show image as per requested in spec
                 self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
-                self.encoded_image_label.grid(row = 11, column = 1)
+                self.encoded_image_label.grid(row = 13, column = 1)
             elif filename.endswith(('.bmp')):
                 # save image
                 with open(filename, "wb") as image:
@@ -239,14 +245,14 @@ class ImagePage(customtkinter.CTkFrame):
                 # show image as per requested in spec
                 self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
-                self.encoded_image_label.grid(row = 11, column = 1)
+                self.encoded_image_label.grid(row = 13, column = 1)
             elif filename.endswith('.gif'):
                 gis.gif_save(self.encoded, filename)
                 # show gif
                 self.encoded_gif = Image.open(filename)
                 self.encoded_frames = [tk.PhotoImage(file=filename, format='gif -index %i' % i) for i in range(self.encoded_gif.n_frames)]
                 self.encoded_gif_label = tk.Label(self, image=self.encoded_frames[0], text="", height=100, width=100)
-                self.encoded_gif_label.grid(row = 11, column = 1)
+                self.encoded_gif_label.grid(row = 13, column = 1)
                 self.after(0, self.play_encoded_gif, 0)
 
 
@@ -264,35 +270,51 @@ class DocumentPage(customtkinter.CTkFrame):
         self.label = customtkinter.CTkLabel(self, text = "Document Steganography", font = customtkinter.CTkFont(size = 20, weight = "bold"))
         self.label.grid(row = 1, column = 0, padx = 20, pady= 10, columnspan = 2)
 
+        self.label = customtkinter.CTkLabel(self, text = "Settings For Docx File", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 2, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.label = customtkinter.CTkLabel(self, text="Set Number of Bits", font = customtkinter.CTkFont(size = 15))
+        self.label.grid(row = 3, column = 0, padx = 20, pady= 2)
+        self.bits_option_menu = customtkinter.CTkOptionMenu(self, values = ["1", "2", "3", "4", "5"])
+        self.bits_option_menu.grid(row = 4, column = 0, padx = 20, pady = (10, 10))
+
+        switch_var = customtkinter.StringVar(value = "on")
+        self.switch = customtkinter.CTkSwitch(self, text = "Vanishing Steganograpy (Off)\nLSB Steganography (On)", variable = switch_var, onvalue = "on", offvalue="off")
+        self.switch.grid(row = 4, column = 1, padx = 20, pady = 10)
+
         self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
-        self.label.grid(row = 2, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.label.grid(row = 5, column = 0, padx = 20, pady= 10, columnspan = 2)
         self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Document here to upload", command = self.cover_on_change)
-        self.upload_button.grid(row = 3, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
+        self.upload_button.grid(row = 6, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
         self.upload_button.drop_target_register(DND_FILES)
         self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
 
         self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
-        self.label.grid(row = 4, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
-        self.secret_message.grid(row = 5, column = 0, sticky = 'w', columnspan = 2)
+        self.label.grid(row = 7, column = 0, padx = 20, pady= 10, columnspan = 2)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 500)
+        self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
+
+        self.label = customtkinter.CTkLabel(self, text = "Key", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 9, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.key_message = customtkinter.CTkTextbox(self, height = 40, width = 500)
+        self.key_message.grid(row = 10, column = 0, sticky = 'w', pady = 10, columnspan = 2)
 
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Document", command = self.encode_document)
-        self.encode_button.grid(row = 6, column = 0, padx = 20, pady = 10)
+        self.encode_button.grid(row = 11, column = 0, padx = 20, pady = 10)
 
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Document", command = self.decode_document)
-        self.decode_button.grid(row = 6, column = 1, padx = 20, pady = 10)
+        self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 7, column = 0)
+            self.success_label.grid(row = 12, column = 0)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 7, column = 0)
+            self.success_label.grid(row = 12, column = 0)
     
     def encode_document(self):
         # Error Handling if the User has not select a Cover File
@@ -308,6 +330,15 @@ class DocumentPage(customtkinter.CTkFrame):
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
 
         if ext == ".docx":
+            if self.switch.get() == "off":
+                pass
+            else:
+                try:
+                    self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+                except ValueError as e:
+                    messagebox.showerror("Error", str(e))
+                    return
+                self.save_as(ext, secret = self.payloadText)
             pass
             # wds.hiddenParagraphTest(self.coverPath, self.payloadText)
         else:
@@ -326,9 +357,11 @@ class DocumentPage(customtkinter.CTkFrame):
         
         _, ext = os.path.splitext(self.coverPath)
         if ext == ".docx":
-            # text = wds.findParagraph(self.coverPath)
-            self.secret_message.delete('1.0', tk.END)
-            self.secret_message.insert('1.0', text)
+            if self.switch.get() == "on":
+                text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
+                # text = wds.findParagraph(self.coverPath)
+                self.secret_message.delete('1.0', tk.END)
+                self.secret_message.insert('1.0', text)
         else:
             text = dms.decode(self.coverPath)
             self.secret_message.delete('1.0', tk.END)
@@ -341,6 +374,8 @@ class DocumentPage(customtkinter.CTkFrame):
             if filename.endswith(('.txt')):
                 dms.encode(self.coverPath, filename, secret)
                 print("\nEncoded the data successfully in the document file")
+            elif filename.endswith(('.docx')):
+                wd_lsb_s.save(filename, self.encoded)
     
 class AudioPage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
@@ -364,26 +399,31 @@ class AudioPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 4, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 500)
         self.secret_message.grid(row = 5, column = 0, sticky = 'w', columnspan = 2)
 
+        self.label = customtkinter.CTkLabel(self, text = "Key", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 6, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.key_message = customtkinter.CTkTextbox(self, height = 40, width = 500)
+        self.key_message.grid(row = 7, column = 0, sticky = 'w', pady = 10, columnspan = 2)
+
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Audio", command = self.encode_audio)
-        self.encode_button.grid(row = 6, column = 0, padx = 20, pady = 10)
+        self.encode_button.grid(row = 8, column = 0, padx = 20, pady = 10)
 
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Audio", command = self.decode_audio)
-        self.decode_button.grid(row = 6, column = 1, padx = 20, pady = 10)
+        self.decode_button.grid(row = 8, column = 1, padx = 20, pady = 10)
 
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 7, column = 0)
+            self.success_label.grid(row = 9, column = 0)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 7, column = 0)
+            self.success_label.grid(row = 9, column = 0)
 
     def encode_audio(self):
         if self.coverPath is None:
@@ -472,26 +512,31 @@ class VideoPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text = "Secret Message", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 7, column = 0, padx = 20, pady = 10, columnspan = 2)
-        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 450)
+        self.secret_message = customtkinter.CTkTextbox(self, height = 100, width = 500)
         self.secret_message.grid(row = 8, column = 0, sticky = 'w', columnspan = 2)
 
+        self.label = customtkinter.CTkLabel(self, text = "Key", font = customtkinter.CTkFont(size = 20))
+        self.label.grid(row = 9, column = 0, padx = 20, pady = 10, columnspan = 2)
+        self.key_message = customtkinter.CTkTextbox(self, height = 40, width = 500)
+        self.key_message.grid(row = 10, column = 0, sticky = 'w', pady = 10, columnspan = 2)
+
         self.encode_button = customtkinter.CTkButton(self, text = "Encode Video", command = self.encode_video)
-        self.encode_button.grid(row = 9, column = 0, padx = 20, pady = 10)
+        self.encode_button.grid(row = 11, column = 0, padx = 20, pady = 10)
 
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Video", command = self.decode_video)
-        self.decode_button.grid(row = 9, column = 1, padx = 20, pady = 10)
+        self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 10, column = 0)
+            self.success_label.grid(row = 12, column = 0)
     
     def cover_on_change(self):
         self.coverPath = get_path(['', '*' + key] for key in supported_types.keys())
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 10, column = 0)
+            self.success_label.grid(row = 12, column = 0)
     
     def encode_video(self):
         if self.coverPath is None:
@@ -543,7 +588,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.TkdndVersion = TkinterDnD._require(self)
 
         self.title("I am a stegosaurus")
-        self.geometry("450x700")
+        self.geometry("500x900")
 
         container = customtkinter.CTkFrame(master=self)
         container.pack(side = "top", fill = "both", expand = True)
