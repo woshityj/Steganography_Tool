@@ -1,20 +1,18 @@
 from steganograpy_utility import to_bin
-
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 
-def secret(secret_data):
+def transform_secret(secret_data):
     l = len(secret_data)
     i = 0
     add = ''
     while i < l:
         t = ord(secret_data[i]) # Getting ascii value of each character
-        print(t)
         if (t >= 32 and t <= 64): # If ascii is between 32 and 64
             t1 = t + 48 # Increment the ascii value by 48
             t2 = t1 ^ 170 # Xoring with 170 (binary value - 10101010)
             res = bin(t2)[2:].zfill(8) # Converting obtained value to 8 bit binary value
             add += "0011" + res
-        else:
+        elif t != 10:
             t1 = t - 48
             t2 = t1 ^ 170
             res = bin(t2)[2:].zfill(8)
@@ -22,17 +20,39 @@ def secret(secret_data):
         i += 1
 
     res1 = add + "111111111111"
-    print("The string after binary conversion applying all the transformation :- " + (res1))
+    # print("The string after binary conversion applying all the transformation :- " + (res1))
     length = len(res1)
     print("Length of binary after conversion:- ", length)
 
     return res1
 
-def encode(document_name, encoded_file, res1):
+def max_number_of_bytes(document_name):
+    count = 0
+    cover_file = open(document_name, "r+")
+    for line in cover_file:
+        for word in line.split():
+            count = count + 1
+    cover_file.close()
+    bt = int(count)
+    print("Maximum number of words that can be inserted: - ", int (bt/6))
+    return bt
+
+def check_secret_can_fit(max_no_of_bytes, secret):
+    if (len(secret) > max_no_of_bytes):
+        return False
+    return True
+
+def encode(document_name, encoded_file, secret):
     HM_SK = ""
     ZWC = {"00":u'\u200C', "01":u'\u202C', "11":u'\u202D', "10":u'\u200E'}
-    file1 = open(document_name, "r+")
+    max_no_of_bytes = max_number_of_bytes(document_name)
+    print(max_no_of_bytes)
+    if (len(secret) > max_no_of_bytes):
+        raise ValueError("[!] Insufficient bytes, need bigger text file or reduce payload")
+    
+    res1 = transform_secret(secret)
 
+    file1 = open(document_name, "r+")
     encoded_file = open(encoded_file, "w+", encoding="utf-8")
     word = []
     for line in file1:

@@ -1,16 +1,35 @@
 from pydub import AudioSegment
 import wave
 import os
+import shutil
 
+def convertWAVToMP3(name_of_file, path = "./tmp"):
+    audio_segment = AudioSegment.from_file(name_of_file)
+    _, ext = os.path.splitext(name_of_file)
+    audio_segment.export(os.path.join(path, _ + '.mp3'), format = "wav")
 
-def encode_aud_data(name_of_file, data):
+def convertMP3ToWave(name_of_file, path = "./tmp"):
+    audio_segment = AudioSegment.from_file(name_of_file)
+    _, ext = os.path.splitext(name_of_file)
+    _ = _.split("/")[-1]
+    audio_segment.export(os.path.join(path, _ + '.wav'), format = "wav")
+
+def get_song_parameters(name_of_file, path = "./tmp"):
+    _, ext = os.path.splitext(name_of_file)
+    _ = _.split("/")[-1]
+    song = wave.open(os.path.join(path, _ + '.wav'), mode = 'rb')
+    return song.getparams()
+
+def encode_aud_data(name_of_file, data, root ="./tmp"):
 
     _, ext = os.path.splitext(name_of_file)
     if ext == '.mp3':
         if not os.path.exists("./tmp"):
             os.makedirs("tmp")
         convertMP3ToWave(name_of_file)
-        filename = os.path.join("./tmp", _ + '.wav')
+        temp_folder = "./tmp"
+        _ = _.split("/")[-1]
+        filename = os.path.join(temp_folder, _ + '.wav')
         print(filename)
         song = wave.open(filename, mode = 'rb')
     else:
@@ -25,6 +44,9 @@ def encode_aud_data(name_of_file, data):
     # data = input("\nEnter the secret message:- ")
 
     res = ''.join(format(i, '08b') for i in bytearray(data, encoding = 'utf-8'))
+    if (len(res) > nframes):
+        clean_tmp()
+        raise ValueError("[!] Insufficient bytes, need bigger audio file or less data.")
     print("\nThe string after binary conversion:- " + (res))
     length = len(res)
     print("\nLength of binary after conversion:- ", length)
@@ -50,14 +72,16 @@ def encode_aud_data(name_of_file, data):
     song.close()
     return frame_modified
 
-def decode_aud_data(name_of_file):
+def decode_aud_data(name_of_file, path = "./tmp"):
 
     _, ext = os.path.splitext(name_of_file)
     if ext == '.mp3':
         if not os.path.exists("./tmp"):
             os.makedirs("tmp")
         convertMP3ToWave(name_of_file)
-        filename = os.path.join("./tmp", _ + '.wav')
+        temp_folder = "./tmp"
+        _ = _.split("/")[-1]
+        filename = os.path.join(temp_folder, _ + '.wav')
         song = wave.open(filename, mode = 'rb')
     else:
         # name_of_file = input("Enter name of the file to be decided:- ")
@@ -73,6 +97,10 @@ def decode_aud_data(name_of_file):
     for i in range(len(frame_bytes)):
         if (p == 1):
             break
+
+        if len(extracted) >= len(frame_bytes):
+            raise Exception("Cover file does not contain any signs of steganography")
+        
         res = bin(frame_bytes[i])[2:].zfill(8)
         if res[len(res) - 2] == 0:
             extracted += res[len(res) - 4]
@@ -87,13 +115,8 @@ def decode_aud_data(name_of_file):
                 print("The Encoded data was :--" , decoded_data[:-5])
                 p = 1
                 return decoded_data[:-5]
-    
-def convertWAVToMP3(name_of_file):
-    audio_segment = AudioSegment.from_file(name_of_file)
-    _, ext = os.path.splitext(name_of_file)
-    audio_segment.export(os.path.join("./tmp", _ + '.mp3'), format = "wav")
-
-def convertMP3ToWave(name_of_file):
-    audio_segment = AudioSegment.from_file(name_of_file)
-    _, ext = os.path.splitext(name_of_file)
-    audio_segment.export(os.path.join("./tmp", _ + '.wav'), format = "wav")
+            
+def clean_tmp(path = "./tmp"):
+    if os.path.exists(path):
+        shutil.rmtree(path)
+        print("[INFO] tmp files are cleaned up")

@@ -176,10 +176,10 @@ class ImagePage(customtkinter.CTkFrame):
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
             elif (ext.lower() == '.bmp'):
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
-                
+
         # Error Handling if the payload is too large to keep in the Cover File
         except ValueError:
-            messagebox.showerror("error", "Insufficient bytes, need a bigger image or reduce payload")
+            messagebox.showerror("Error", "Insufficient bytes, need a bigger image or reduce payload")
             return
         self.save_as(ext)
     
@@ -261,22 +261,34 @@ class DocumentPage(customtkinter.CTkFrame):
             self.success_label.grid(row = 7, column = 0)
     
     def encode_document(self):
+        # Error Handling if the User has not select a Cover File
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
-        print(ext)
+
+        if len(self.secret_message.get('1.0', 'end-1c')) == 0:
+            messagebox.showerror("Error", "Please enter a secret message.")
+            return
+
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
+
         if ext == ".docx":
             wds.hiddenParagraphTest(self.coverPath, self.payloadText)
         else:
-            secret_text = dms.secret(self.payloadText)
-            self.save_as(ext, secret = secret_text)
+            # Error Handling if the Secret can fit into the Cover File
+            max_no_of_bytes = dms.max_number_of_bytes(self.coverPath)
+            if dms.check_secret_can_fit(max_no_of_bytes, self.payloadText) == False:
+                messagebox.showerror("Error", "Insufficient bytes, need a bigger text file or reduce payload")
+                return
+            self.save_as(ext, secret = self.payloadText)
 
     def decode_document(self):
+        # Error Handling if the User has not select a Cover File
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
+        
         _, ext = os.path.splitext(self.coverPath)
         if ext == ".docx":
             text = wds.findParagraph(self.coverPath)
@@ -342,6 +354,11 @@ class AudioPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
+
+        if len(self.secret_message.get('1.0', 'end-1c')) == 0:
+            messagebox.showerror("Error", "Please enter a secret message.")
+            return
+        
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
         self.save_as(ext)
@@ -350,16 +367,20 @@ class AudioPage(customtkinter.CTkFrame):
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
-        text = auds.decode_aud_data(self.coverPath)
+        try:
+            text = auds.decode_aud_data(self.coverPath)
+        except Exception:
+            messagebox.showerror("Error", "Audio file contains no signs of steganography")
+            return
         _, ext = os.path.splitext(self.coverPath)
-        os.remove(_ + ".wav")
+        if ext == ".mp3":
+            auds.clean_tmp()
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
     def save_as(self, ext, secret = None):
         # save as prompt
         filename = asksaveasfilename(defaultextension='wav', filetypes=[("Same as original", 'wav'), ("All Files", "*.*")])
-        print(ext)
         if filename:
             if filename.endswith(('.wav')) and ext != ".mp3":
                 song = wave.open(self.coverPath, mode = 'rb')
@@ -369,15 +390,15 @@ class AudioPage(customtkinter.CTkFrame):
                     print("\nEncoded the data successfully in the audio file")
             elif ext == ".mp3":
                 _, ext = os.path.splitext(filename)
-                temp_file_name, ext = os.path.splitext(self.coverPath)
-                song = wave.open(temp_file_name + ".wav", mode = 'rb')
+                song_params = auds.get_song_parameters(self.coverPath)
                 with wave.open(filename, 'wb') as fd:
-                    fd.setparams(song.getparams())
+                    fd.setparams(song_params)
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
                 auds.convertWAVToMP3(filename)
+                # Remove temporary WAV file
                 os.remove(filename)
-                os.remove(temp_file_name + ".wav")
+                auds.clean_tmp()
 
 class VideoPage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
@@ -439,8 +460,15 @@ class VideoPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Pleae select or drop a cover item first!")
             return
         _, ext = os.path.splitext(self.coverPath)
+        if (len(self.secret_message.get('1.0', 'end-1c')) == 0):
+            messagebox.showerror("Error", "Please enter a secret message")
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
+        try:
+            supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+            vids.clean_tmp()
+            return
         self.save_as(ext)
 
     def decode_video(self):

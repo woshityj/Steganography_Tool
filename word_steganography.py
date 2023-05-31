@@ -69,10 +69,10 @@ def save(path, docu):
         docu.save(path)
 
 
-save("testingfiles/out.docx", encode('testingfiles/SampleWord.docx', """hello world!!
-hello world!!
-hello world!!
-hello world!!
-hello world!!
-""", 5))
-print(decode("testingfiles/out.docx", 5))
+# save("testingfiles/out.docx", encode('testingfiles/SampleWord.docx', """hello world!!
+# hello world!!
+# hello world!!
+# hello world!!
+# hello world!!
+# """, 5))
+# print(decode("testingfiles/out.docx", 5))
