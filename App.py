@@ -459,6 +459,7 @@ class VideoPage(customtkinter.CTkFrame):
         if self.coverPath is None:
             messagebox.showerror("Error", "Pleae select or drop a cover item first!")
             return
+        
         _, ext = os.path.splitext(self.coverPath)
         if (len(self.secret_message.get('1.0', 'end-1c')) == 0):
             messagebox.showerror("Error", "Please enter a secret message")
@@ -475,8 +476,18 @@ class VideoPage(customtkinter.CTkFrame):
         if self.coverPath is None:
             messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
+        
+        if len(self.frame_option.get()) == 0:
+            messagebox.showerror("Error", "Please enter a frame number")
+            return
+        
         _, ext = os.path.splitext(self.coverPath)
-        text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get(), self.bits_option_menu.get())
+        try:
+            text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get(), self.bits_option_menu.get())
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+            vids.clean_tmp()
+            return
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 

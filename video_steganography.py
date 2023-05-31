@@ -52,8 +52,11 @@ def encode_video(video, secret, frame_number, lsb):
 
 def decode_video(video, frame_number, lsb):
     no_of_frames = count_frames(video)
-    if int(frame_number) < 0 or int(frame_number) > no_of_frames:
+    if int(frame_number) < 0:
         raise ValueError("Frame Number is out of bounds")
+    if int(frame_number) >= no_of_frames:
+        raise ValueError("Frame Number is out of bounds")
+    
     frame_extraction(video)
     encoded_frame = os.path.join("./tmp", frame_number + '.png')
     secret = image_steganography.png_decode(encoded_frame, int(lsb))
