@@ -13,7 +13,7 @@ def encode(path, msg, bit):
     for para in docu.paragraphs:
         max_length += len(para.text)
     if length > max_length:
-        raise ValueError(f"Message length ({length}) exceeded {max_length}, please adjust the message or bit.")
+        raise ValueError(f"[!] Message length ({length}) exceeded {max_length}, please adjust the message or bit.")
 
     index = 0
 

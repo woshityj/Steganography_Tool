@@ -12,7 +12,7 @@ def encode(path, msg, bit):
     length = len(binary_msg)
     max_length = (sheet.max_row-1) * sheet.max_column * bit
     if length > max_length:
-        raise ValueError(f"Message length ({length}) exceeded {max_length}, please adjust the message or bit.")
+        raise ValueError(f"[!] Message length ({length}) exceeded {max_length}, please adjust the message or bit.")
     for row in sheet.iter_rows(min_row=2):
         if index >= length:
             break

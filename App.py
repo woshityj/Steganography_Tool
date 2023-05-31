@@ -75,9 +75,12 @@ class ImagePage(customtkinter.CTkFrame):
         super().__init__(master, **kwargs)
 
         self.coverPath = None
-        self.encoded_image_label = None
+        self.encoded_image_label = customtkinter.CTkLabel(self)
         self.image_label = customtkinter.CTkLabel(self)
-        self.gif_Label = tk.Label(self)
+        self.gif_label = tk.Label(self)
+        self.encoded_gif_label = tk.Label(self)
+        self.gif_after_id = None
+        self.encoded_gif_after_id = None
 
         self.grid_columnconfigure((0, 1), weight = 1)
 
@@ -133,30 +136,42 @@ class ImagePage(customtkinter.CTkFrame):
             self.show(self.coverPath)
 
     def show(self, coverPath):
+        if self.gif_after_id is not None:
+            self.after_cancel(self.gif_after_id)
+            self.gif_after_id = None
         if coverPath.lower().endswith(('.png', '.bmp')):
             self.after(0)
-            self.gif_Label.grid_forget()
+            self.gif_label.grid_forget()
             self.uploaded_image = customtkinter.CTkImage(Image.open(coverPath), size = (100, 100))
             self.image_label = customtkinter.CTkLabel(self, image = self.uploaded_image, text = "")
             self.image_label.grid(row = 11, column = 0)
 
-            self.success_label = customtkinter.CTkLabel(self, text ="Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            # self.success_label = customtkinter.CTkLabel(self, text ="Successfully uploaded file")
+            # self.success_label.grid(row = 12, column = 0)
         if coverPath.lower().endswith('.gif'):
+
             self.image_label.grid_forget()
             self.gif = Image.open(coverPath)
             self.frames = [tk.PhotoImage(file=coverPath, format='gif -index %i' % i) for i in range(self.gif.n_frames)]
-            self.gif_Label = tk.Label(self, image=self.frames[0], text="", height=100, width=100)
-            self.gif_Label.grid(row = 11, column = 0)
+            self.gif_label = tk.Label(self, image=self.frames[0], text="", height=100, width=100)
+            self.gif_label.grid(row = 11, column = 0)
             self.after(0, self.play_gif, 0)
 
     def play_gif(self, fn):
         frame = self.frames[fn]
-        fn +=1
-        if fn == self.gif.n_frames:
+        fn += 1
+        if fn == len(self.frames):
             fn = 0
-        self.gif_Label.configure(image=frame)
-        self.after(self.gif.info['duration'], self.play_gif, fn)
+        self.gif_label.configure(image=frame)
+        self.gif_after_id = self.after(self.gif.info['duration'], self.play_gif, fn)
+
+    def play_encoded_gif(self, fn):
+        frame = self.encoded_frames[fn]
+        fn += 1
+        if fn == len(self.encoded_frames):
+            fn = 0
+        self.encoded_gif_label.configure(image=frame)
+        self.encoded_gif_after_id = self.after(self.encoded_gif.info['duration'], self.play_encoded_gif, fn)
 
     def encode_image(self):
         # Error Handling if the User has not select a Cover File
@@ -200,12 +215,17 @@ class ImagePage(customtkinter.CTkFrame):
         self.secret_message.delete('1.0', tk.END)
         self.secret_message.insert('1.0', text)
 
-        if self.encoded_image_label is not None:
-            self.encoded_image_label.destroy()
+        # if self.encoded_image_label is not None:
+        #     self.encoded_image_label.destroy()
             
     def save_as(self, ext):
         # save as prompt
         filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
+        self.encoded_image_label.grid_forget()
+        self.encoded_gif_label.grid_forget()
+        if self.encoded_gif_after_id is not None:
+            self.after_cancel(self.encoded_gif_after_id)
+            self.encoded_gif_after_id = None
         if filename:
             if filename.endswith(('.png', '.jpg', '.jpeg')):
                 # save image
@@ -217,6 +237,11 @@ class ImagePage(customtkinter.CTkFrame):
             if filename.endswith('.gif'):
                 gis.gif_save(self.encoded, filename)
                 # show gif
+                self.encoded_gif = Image.open(filename)
+                self.encoded_frames = [tk.PhotoImage(file=filename, format='gif -index %i' % i) for i in range(self.encoded_gif.n_frames)]
+                self.encoded_gif_label = tk.Label(self, image=self.encoded_frames[0], text="", height=100, width=100)
+                self.encoded_gif_label.grid(row = 11, column = 1)
+                self.after(0, self.play_encoded_gif, 0)
 
 
 class DocumentPage(customtkinter.CTkFrame):
