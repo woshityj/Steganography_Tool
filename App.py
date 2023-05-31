@@ -74,6 +74,7 @@ class ImagePage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
         super().__init__(master, **kwargs)
 
+        self.coverPath = None
         self.encoded_image_label = None
         self.image_label = customtkinter.CTkLabel(self)
         self.gif_Label = tk.Label(self)
@@ -224,6 +225,8 @@ class DocumentPage(customtkinter.CTkFrame):
 
         self.grid_columnconfigure((0, 1), weight = 1)
 
+        self.coverPath = None
+
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
 
@@ -312,6 +315,7 @@ class AudioPage(customtkinter.CTkFrame):
         super().__init__(master, **kwargs)
 
         self.grid_columnconfigure((0, 1), weight = 1)
+        self.coverPath = None
 
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
@@ -405,6 +409,8 @@ class VideoPage(customtkinter.CTkFrame):
         super().__init__(master, **kwargs)
 
         self.grid_columnconfigure((0, 1), weight = 1)
+
+        self.coverPath = None
 
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
