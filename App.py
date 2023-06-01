@@ -13,8 +13,8 @@ import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
-# import word_doc_steganography as wds
-# import word_steganography as wd_lsb_s
+import word_doc_steganography as wds
+import word_steganography as wd_lsb_s
 import xlsx_steganography as xls
 import encrypt as enc
 
@@ -72,6 +72,9 @@ class MainMenu(customtkinter.CTkFrame):
 
         self.img_steg_button = customtkinter.CTkButton(self, text = "Video Steganography", command = lambda : controller.show_frame(VideoPage))
         self.img_steg_button.grid(row=4, column=0, padx=20, pady=5, sticky="ew")
+
+def open_img(name, img):
+    cv2.imshow(name, img)
 
 class ImagePage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
@@ -152,6 +155,7 @@ class ImagePage(customtkinter.CTkFrame):
             self.gif_label.grid_forget()
             self.uploaded_image = customtkinter.CTkImage(Image.open(coverPath), size = (100, 100))
             self.image_label = customtkinter.CTkLabel(self, image = self.uploaded_image, text = "")
+            self.image_label.bind("<Double-Button-1>", lambda event: open_img(coverPath, cv2.imread(coverPath)))
             self.image_label.grid(row = 13, column = 0)
 
             # self.success_label = customtkinter.CTkLabel(self, text ="Successfully uploaded file")
@@ -244,6 +248,7 @@ class ImagePage(customtkinter.CTkFrame):
                 # show image as per requested in spec
                 self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
+                self.encoded_image_label.bind("<Double-Button-1>", lambda event: open_img(filename, self.encoded))
                 self.encoded_image_label.grid(row = 13, column = 1)
             elif filename.endswith(('.bmp')):
                 # save image
@@ -252,6 +257,7 @@ class ImagePage(customtkinter.CTkFrame):
                 # show image as per requested in spec
                 self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
+                self.encoded_image_label.bind("<Double-Button-1>", lambda event: open_img(filename, self.encoded))
                 self.encoded_image_label.grid(row = 13, column = 1)
             elif filename.endswith('.gif'):
                 gis.gif_save(self.encoded, filename)
@@ -384,8 +390,8 @@ class DocumentPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if ext == ".docx":
             if self.switch.get() == "on":
-                # text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
-                # text = wds.findParagraph(self.coverPath)
+                text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
+                text = wds.findParagraph(self.coverPath)
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
         elif ext == ".txt":
