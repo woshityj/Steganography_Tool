@@ -76,6 +76,15 @@ class MainMenu(customtkinter.CTkFrame):
 def open_img(name, img):
     cv2.imshow(name, img)
 
+
+def play_gif(fn, frames, label, duration, imagepage):
+        f = frames[fn]
+        fn += 1
+        if fn == len(frames):
+            fn = 0
+        label.configure(image=f)
+        return imagepage.after(duration, lambda : play_gif(fn, frames, label, duration, imagepage))
+
 class GifWindow(tk.Toplevel):
     def __init__(self, master, path):
         super().__init__(master = master)
@@ -85,15 +94,7 @@ class GifWindow(tk.Toplevel):
         self.frames = [tk.PhotoImage(file=path, format='gif -index %i' % i) for i in range(gif.n_frames)]
         self.label = tk.Label(self, image=self.frames[0], text="")
         self.label.pack()
-        self.after(0, self.play_gif, 0)
-
-    def play_gif(self, fn):
-        frame = self.frames[fn]
-        fn += 1
-        if fn == len(self.frames):
-            fn = 0
-        self.label.configure(image=frame)
-        self.after(self.duration, self.play_gif, fn)
+        self.after(0, lambda : play_gif(0, self.frames, self.label, self.duration, self))
 
 
 
@@ -188,23 +189,8 @@ class ImagePage(customtkinter.CTkFrame):
             self.gif_label = tk.Label(self, image=self.frames[0], text="", height=100, width=100)
             self.gif_label.bind("<Double-Button-1>", lambda e: GifWindow(self, coverPath))
             self.gif_label.grid(row = 13, column = 0)
-            self.after(0, self.play_gif, 0)
+            self.gif_after_id = self.after(0, lambda : play_gif(0, self.frames, self.gif_label, self.gif.info['duration'], self))
 
-    def play_gif(self, fn):
-        frame = self.frames[fn]
-        fn += 1
-        if fn == len(self.frames):
-            fn = 0
-        self.gif_label.configure(image=frame)
-        self.gif_after_id = self.after(self.gif.info['duration'], self.play_gif, fn)
-
-    def play_encoded_gif(self, fn):
-        frame = self.encoded_frames[fn]
-        fn += 1
-        if fn == len(self.encoded_frames):
-            fn = 0
-        self.encoded_gif_label.configure(image=frame)
-        self.encoded_gif_after_id = self.after(self.encoded_gif.info['duration'], self.play_encoded_gif, fn)
 
     def encode_image(self):
         # Error Handling if the User has not select a Cover File
@@ -294,8 +280,8 @@ class ImagePage(customtkinter.CTkFrame):
                 self.encoded_frames = [tk.PhotoImage(file=filename, format='gif -index %i' % i) for i in range(self.encoded_gif.n_frames)]
                 self.encoded_gif_label = tk.Label(self, image=self.encoded_frames[0], text="", height=100, width=100)
                 self.encoded_gif_label.grid(row = 13, column = 1)
-                self.encoded_gif_label.bind("<Double-Button-1>", lambda e: GifWindow(self, filename))
-                self.after(0, self.play_encoded_gif, 0)
+                self.encoded_gif_label.bind("<Double-Button-1>", lambda event: GifWindow(self, filename))
+                self.encoded_gif_after_id = self.after(0, lambda : play_gif(0, self.encoded_frames, self.encoded_gif_label, self.encoded_gif.info['duration'], self))
 
 
 class DocumentPage(customtkinter.CTkFrame):
