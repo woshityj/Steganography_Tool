@@ -334,18 +334,39 @@ class DocumentPage(customtkinter.CTkFrame):
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Document", command = self.decode_document)
         self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
+        self.label = customtkinter.CTkLabel(self, text="Document Preview", font=customtkinter.CTkFont(size=20))
+        self.label.grid(row=13, column=0, padx=20, pady=10, columnspan=2)
+        self.before_text = customtkinter.CTkTextbox(self, height=75, width=500)
+        self.before_text.grid(row=14, column=0, sticky='w', columnspan=2)
+
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
-            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            self.success_label = customtkinter.CTkLabel(self, text="Successfully uploaded file")
+            self.success_label.grid(row=12, column=0)
+
+            # Read the content of the file
+            with open(self.coverPath, "r") as file:
+                content = file.read()
+
+            # Set the content in the "Before Encoding" textbox
+            self.before_text.delete('1.0', 'end')
+            self.before_text.insert('1.0', content)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 12, column = 0)
-    
+
+            # Read the content of the file
+            with open(self.coverPath, "r") as file:
+                content = file.read()
+
+            # Set the content in the "Before Encoding" textbox
+            self.before_text.delete('1.0', 'end')
+            self.before_text.insert('1.0', content)
+
     def encode_document(self):
         # Error Handling if the User has not select a Cover File
         if self.coverPath is None:
@@ -762,7 +783,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.TkdndVersion = TkinterDnD._require(self)
 
         self.title("I am a stegosaurus")
-        self.geometry("500x900")
+        self.geometry("500x950")
 
         container = customtkinter.CTkFrame(master=self)
         container.pack(side = "top", fill = "both", expand = True)
