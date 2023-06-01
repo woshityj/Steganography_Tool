@@ -6,6 +6,8 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import customtkinter
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import wave
+import vlc
+from tkVideoPlayer import TkinterVideo
 
 import cv2
 import image_steganography as ims
@@ -451,6 +453,7 @@ class AudioPage(customtkinter.CTkFrame):
 
         self.grid_columnconfigure((0, 1), weight = 1)
         self.coverPath = None
+        self.audio = None
 
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
@@ -460,7 +463,7 @@ class AudioPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 2, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Document here to upload", command = self.cover_on_change)
+        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Audio here to upload", command = self.cover_on_change)
         self.upload_button.grid(row = 3, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
         self.upload_button.drop_target_register(DND_FILES)
         self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
@@ -481,17 +484,34 @@ class AudioPage(customtkinter.CTkFrame):
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Audio", command = self.decode_audio)
         self.decode_button.grid(row = 8, column = 1, padx = 20, pady = 10)
 
+        self.play_button = customtkinter.CTkButton(self, text = "Play Audio", font = customtkinter.CTkFont(size = 20, weight = "bold"), command = self.play_audio)
+        self.play_button.grid(row = 9, column = 0, padx = 20, pady = 10, columnspan = 1)
+
+        self.stop_button = customtkinter.CTkButton(self, text = "Stop Audio", font = customtkinter.CTkFont(size = 20, weight = "bold"), command = self.stop_audio)
+        self.stop_button.grid(row = 9, column = 1, padx = 20, pady = 10, columnspan = 1)
+
+    def play_audio(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "No audio file is uploaded")
+            return
+        self.audio = vlc.MediaPlayer(self.coverPath)
+        self.audio.play()
+
+    def stop_audio(self):
+        if self.audio is not None:
+            self.audio.stop()
+
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 9, column = 0)
+            self.success_label.grid(row = 10, column = 0)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 9, column = 0)
+            self.success_label.grid(row = 10, column = 0)
 
     def encode_audio(self):
         if self.coverPath is None:
@@ -561,6 +581,9 @@ class VideoPage(customtkinter.CTkFrame):
         self.grid_columnconfigure((0, 1), weight = 1)
 
         self.coverPath = None
+        self.encoded_video_name = None
+        self.cover_player = None
+        self.encoded_player = None
 
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
@@ -604,17 +627,65 @@ class VideoPage(customtkinter.CTkFrame):
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Video", command = self.decode_video)
         self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
+        self.cover_video = customtkinter.CTkButton(self, text = "Play Cover Video", command = self.play_cover_video)
+        self.cover_video.grid(row = 12, column = 0, padx = 20, pady = 10)
+
+        self.encoded_video = customtkinter.CTkButton(self, text = "Play Encoded Video", command = self.play_encoded_video)
+        self.encoded_video.grid(row = 12, column = 1, padx = 20, pady = 10)
+
+        self.cover_video = customtkinter.CTkButton(self, text = "Stop Cover Video", command = self.stop_cover_video)
+        self.cover_video.grid(row = 13, column = 0, padx = 20, pady = 10)
+
+        self.cover_video = customtkinter.CTkButton(self, text = "Stop Encoded Video", command = self.stop_encoded_video)
+        self.cover_video.grid(row = 13, column = 1, padx = 20, pady = 10)
+
+    def play_cover_video(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "No Cover Video Added")
+            return
+        self.vlc_instance_cover = vlc.Instance()
+        self.cover_player = self.vlc_instance_cover.media_player_new()
+        self.cover_media = self.vlc_instance_cover.media_new(self.coverPath)
+        self.cover_player.set_media(self.cover_media)
+        self.cover_player.play()
+    
+    def play_encoded_video(self):
+        if self.encoded_video_name is None:
+            messagebox.showerror("Error", "No Encoded Video Added")
+            return
+        self.vlc_instance_encoded = vlc.Instance()
+        self.encoded_player = self.vlc_instance_encoded.media_player_new()
+        self.encoded_media = self.vlc_instance_encoded.media_new(self.encoded_video_name)
+        self.encoded_player.set_media(self.encoded_media)
+        self.encoded_player.play()
+
+    def stop_cover_video(self):
+        if self.coverPath is None or self.cover_player is None:
+            messagebox.showerror("Error", "No Cover Video Added")
+            return
+        self.cover_player.release()
+    
+    def stop_encoded_video(self):
+        if self.encoded_video_name is None or self.encoded_player is None:
+            messagebox.showerror("Error", "No Encoded Video Added")
+            return
+        self.encoded_player.release()
+
+    
+
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            self.success_label.grid(row = 14, column = 0)
     
     def cover_on_change(self):
         self.coverPath = get_path(['', '*' + key] for key in supported_types.keys())
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            self.success_label.grid(row = 14, column = 0)
+
+
     
     def encode_video(self):
         if self.coverPath is None:
@@ -624,6 +695,8 @@ class VideoPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if (len(self.secret_message.get('1.0', 'end-1c')) == 0):
             messagebox.showerror("Error", "Please enter a secret message")
+            return
+
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         try:
             message = self.key_message.get('1.0', 'end-1c')
@@ -667,6 +740,7 @@ class VideoPage(customtkinter.CTkFrame):
         if filename:
             if filename.endswith(('.mp4')):
                 vids.save_as(filename)
+                self.encoded_video_name = filename
 
 
 
