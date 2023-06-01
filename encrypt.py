@@ -95,3 +95,11 @@ def decryptMessage(cipher, key):
         return msg[: -null_count]
   
     return msg
+
+def has_repeating_characters(string):
+    char_count = {}
+    for char in string:
+        if char in char_count:
+            return True
+        char_count[char] = 1
+    return False

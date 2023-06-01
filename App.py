@@ -194,7 +194,12 @@ class ImagePage(customtkinter.CTkFrame):
             return
         
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
+        message = self.key_message.get('1.0', 'end-1c')
+        if(enc.has_repeating_characters(message)):
+            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+            return
+        else:
+            self.payloadText = enc.encryptMessage(self.payloadText , message)
         try:
             if ext.lower() == '.png' or ext.lower() == '.gif' or ext.lower() == '.bmp':
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
@@ -336,8 +341,13 @@ class DocumentPage(customtkinter.CTkFrame):
                 pass
             else:
                 try:
-                    self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
-                    self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+                    message = self.key_message.get('1.0', 'end-1c')
+                    if(enc.has_repeating_characters(message)):
+                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                        return
+                    else:
+                        self.payloadText = enc.encryptMessage(self.payloadText , message)
+                        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
                 except ValueError as e:
                     messagebox.showerror("Error", str(e))
                     return
@@ -353,8 +363,13 @@ class DocumentPage(customtkinter.CTkFrame):
             self.save_as(ext, secret = self.payloadText)
         elif ext == ".xlsx":
             try:
-                self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
-                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+                message = self.key_message.get('1.0', 'end-1c')
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                else:
+                    self.payloadText = enc.encryptMessage(self.payloadText , message)
+                    self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
             except ValueError as e:
                 messagebox.showerror("Error", str(e))
                 return
@@ -461,9 +476,14 @@ class AudioPage(customtkinter.CTkFrame):
             return
         
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-        self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
-        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
-        self.save_as(ext)
+        message = self.key_message.get('1.0', 'end-1c')
+        if(enc.has_repeating_characters(message)):
+            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+            return
+        else:
+            self.payloadText = enc.encryptMessage(self.payloadText , message)
+            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+            self.save_as(ext)
 
     def decode_audio(self):
         if self.coverPath is None:
@@ -578,8 +598,13 @@ class VideoPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Please enter a secret message")
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         try:
-            self.payloadText = enc.encryptMessage(self.payloadText , self.key_message.get('1.0', 'end-1c'))
-            supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
+            message = self.key_message.get('1.0', 'end-1c')
+            if(enc.has_repeating_characters(message)):
+                messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                return
+            else:
+                self.payloadText = enc.encryptMessage(self.payloadText , message)
+                supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
         except ValueError as e:
             messagebox.showerror("Error", str(e))
             vids.clean_tmp()
