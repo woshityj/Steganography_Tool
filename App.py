@@ -27,7 +27,7 @@ supported_types = {
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xlsx': (xls.encode, xls.decode),
-    # '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
+    '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
 }
 
 
@@ -75,6 +75,27 @@ class MainMenu(customtkinter.CTkFrame):
 
 def open_img(name, img):
     cv2.imshow(name, img)
+
+class GifWindow(tk.Toplevel):
+    def __init__(self, master, path):
+        super().__init__(master = master)
+        self.title(path)
+        gif = Image.open(path)
+        self.duration = gif.info['duration']
+        self.frames = [tk.PhotoImage(file=path, format='gif -index %i' % i) for i in range(gif.n_frames)]
+        self.label = tk.Label(self, image=self.frames[0], text="")
+        self.label.pack()
+        self.after(0, self.play_gif, 0)
+
+    def play_gif(self, fn):
+        frame = self.frames[fn]
+        fn += 1
+        if fn == len(self.frames):
+            fn = 0
+        self.label.configure(image=frame)
+        self.after(self.duration, self.play_gif, fn)
+
+
 
 class ImagePage(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
@@ -161,11 +182,11 @@ class ImagePage(customtkinter.CTkFrame):
             # self.success_label = customtkinter.CTkLabel(self, text ="Successfully uploaded file")
             # self.success_label.grid(row = 12, column = 0)
         if coverPath.lower().endswith('.gif'):
-
             self.image_label.grid_forget()
             self.gif = Image.open(coverPath)
             self.frames = [tk.PhotoImage(file=coverPath, format='gif -index %i' % i) for i in range(self.gif.n_frames)]
             self.gif_label = tk.Label(self, image=self.frames[0], text="", height=100, width=100)
+            self.gif_label.bind("<Double-Button-1>", lambda e: GifWindow(self, coverPath))
             self.gif_label.grid(row = 13, column = 0)
             self.after(0, self.play_gif, 0)
 
@@ -266,6 +287,7 @@ class ImagePage(customtkinter.CTkFrame):
                 self.encoded_frames = [tk.PhotoImage(file=filename, format='gif -index %i' % i) for i in range(self.encoded_gif.n_frames)]
                 self.encoded_gif_label = tk.Label(self, image=self.encoded_frames[0], text="", height=100, width=100)
                 self.encoded_gif_label.grid(row = 13, column = 1)
+                self.encoded_gif_label.bind("<Double-Button-1>", lambda e: GifWindow(self, filename))
                 self.after(0, self.play_encoded_gif, 0)
 
 
@@ -348,11 +370,11 @@ class DocumentPage(customtkinter.CTkFrame):
             else:
                 try:
                     message = self.key_message.get('1.0', 'end-1c')
-                    if(enc.has_repeating_characters(message)):
+                    if enc.has_repeating_characters(message):
                         messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
                         return
                     else:
-                        self.payloadText = enc.encryptMessage(self.payloadText , message)
+                        self.payloadText = enc.encryptMessage(self.payloadText, message)
                         self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
                 except ValueError as e:
                     messagebox.showerror("Error", str(e))
@@ -391,7 +413,7 @@ class DocumentPage(customtkinter.CTkFrame):
         if ext == ".docx":
             if self.switch.get() == "on":
                 text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
-                text = wds.findParagraph(self.coverPath)
+                # text = wds.findParagraph(self.coverPath)
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
         elif ext == ".txt":
@@ -418,8 +440,8 @@ class DocumentPage(customtkinter.CTkFrame):
             if filename.endswith(('.txt')):
                 dms.encode(self.coverPath, filename, secret)
                 print("\nEncoded the data successfully in the document file")
-            # elif filename.endswith(('.docx')):
-                # wd_lsb_s.save(filename, self.encoded)
+            elif filename.endswith(('.docx')):
+                wd_lsb_s.save(filename, self.encoded)
             elif filename.endswith(('.xlsx')):
                 xls.save(filename, self.encoded)
     
