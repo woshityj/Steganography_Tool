@@ -94,15 +94,7 @@ class GifWindow(tk.Toplevel):
         self.frames = [tk.PhotoImage(file=path, format='gif -index %i' % i) for i in range(gif.n_frames)]
         self.label = tk.Label(self, image=self.frames[0], text="")
         self.label.pack()
-        self.after(0, self.play_gif, 0)
-
-    def play_gif(self, fn):
-        frame = self.frames[fn]
-        fn += 1
-        if fn == len(self.frames):
-            fn = 0
-        self.label.configure(image=frame)
-        self.after(self.duration, self.play_gif, fn)
+        self.after(0, lambda : play_gif(0, self.frames, self.label, self.duration, self))
 
 
 
