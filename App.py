@@ -6,8 +6,8 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import customtkinter
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import wave
-import vlc
-from tkVideoPlayer import TkinterVideo
+# import vlc
+# from tkVideoPlayer import TkinterVideo
 
 import cv2
 import image_steganography as ims
@@ -161,12 +161,12 @@ class ImagePage(customtkinter.CTkFrame):
         self.label.grid(row = 12, column = 1, padx = 20, pady= 10, columnspan = 1)
 
     def cover_on_drop(self, event):
-        self.coverPath = get_drop(event, supported_types)
+        self.coverPath = get_drop(event, ('.png', '.bmp', '.gif'))
         if self.coverPath is not None:
             self.show(self.coverPath)
 
     def cover_on_change(self):
-        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
+        self.coverPath = get_path([('', '*.png'), ('', '*.bmp'), ('', '*.gif')])
         if self.coverPath is not None:
             self.show(self.coverPath)
 
@@ -340,7 +340,7 @@ class DocumentPage(customtkinter.CTkFrame):
         self.before_text.grid(row=14, column=0, sticky='w', columnspan=2)
 
     def cover_on_drop(self, event):
-        self.coverPath = get_drop(event, supported_types)
+        self.coverPath = get_drop(event, ('.txt', '.xlsx', '.docx'))
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text="Successfully uploaded file")
             self.success_label.grid(row=12, column=0)
@@ -354,7 +354,7 @@ class DocumentPage(customtkinter.CTkFrame):
             self.before_text.insert('1.0', content)
 
     def cover_on_change(self):
-        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
+        self.coverPath = get_path([('', '*.txt'), ('', '*.xlsx'), ('', '*.docx')])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 12, column = 0)
@@ -521,13 +521,13 @@ class AudioPage(customtkinter.CTkFrame):
             self.audio.stop()
 
     def cover_on_drop(self, event):
-        self.coverPath = get_drop(event, supported_types)
+        self.coverPath = get_drop(event, ('.wav', '.mp3'))
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 10, column = 0)
 
     def cover_on_change(self):
-        self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
+        self.coverPath = get_path([('', '*.wav'), ('', '*.mp3')])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 10, column = 0)
@@ -700,13 +700,13 @@ class VideoPage(customtkinter.CTkFrame):
     
 
     def cover_on_drop(self, event):
-        self.coverPath = get_drop(event, supported_types)
+        self.coverPath = get_drop(event, '.mp4')
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 14, column = 0)
     
     def cover_on_change(self):
-        self.coverPath = get_path(['', '*' + key] for key in supported_types.keys())
+        self.coverPath = get_path([('', '*.mp4')])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 14, column = 0)
