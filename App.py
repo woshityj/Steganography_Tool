@@ -6,6 +6,8 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import customtkinter
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import wave
+import vlc
+from tkVideoPlayer import TkinterVideo
 
 import cv2
 import image_steganography as ims
@@ -13,8 +15,8 @@ import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
-import word_doc_steganography as wds
-import word_steganography as wd_lsb_s
+# import word_doc_steganography as wds
+# import word_steganography as wd_lsb_s
 import xlsx_steganography as xls
 import encrypt as enc
 
@@ -27,7 +29,7 @@ supported_types = {
     '.mp4': (vids.encode_video, vids.decode_video),
     '.txt': (dms.decode),
     '.xlsx': (xls.encode, xls.decode),
-    '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
+    # '.docx': (wd_lsb_s.encode, wd_lsb_s.decode)
 }
 
 
@@ -206,11 +208,12 @@ class ImagePage(customtkinter.CTkFrame):
         
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         message = self.key_message.get('1.0', 'end-1c')
-        if(enc.has_repeating_characters(message)):
-            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-            return
-        else:
-            self.payloadText = enc.encryptMessage(self.payloadText , message)
+        if(len(message) > 0):
+            if(enc.has_repeating_characters(message)):
+                messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                return
+            else:
+                self.payloadText = enc.encryptMessage(self.payloadText , message)
         try:
             if ext.lower() == '.png' or ext.lower() == '.gif' or ext.lower() == '.bmp':
                 self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
@@ -229,8 +232,14 @@ class ImagePage(customtkinter.CTkFrame):
         
         _, ext = os.path.splitext(self.coverPath)
         if ext.lower() == '.png' or ext.lower() == '.gif' or ext.lower() == '.bmp':
+            message = self.key_message.get('1.0', 'end-1c')
             text = supported_types[ext.lower()][1](self.coverPath, int(self.bits_option_menu.get()))
-            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if(len(message) > 0):
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                else:
+                    text = enc.decryptMessage(text , message)
             if text == 0:
                 messagebox.showerror("Error", "Wrong Key")
                 return
@@ -325,18 +334,39 @@ class DocumentPage(customtkinter.CTkFrame):
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Document", command = self.decode_document)
         self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
+        self.label = customtkinter.CTkLabel(self, text="Document Preview", font=customtkinter.CTkFont(size=20))
+        self.label.grid(row=13, column=0, padx=20, pady=10, columnspan=2)
+        self.before_text = customtkinter.CTkTextbox(self, height=75, width=500)
+        self.before_text.grid(row=14, column=0, sticky='w', columnspan=2)
+
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
-            self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            self.success_label = customtkinter.CTkLabel(self, text="Successfully uploaded file")
+            self.success_label.grid(row=12, column=0)
+
+            # Read the content of the file
+            with open(self.coverPath, "r") as file:
+                content = file.read()
+
+            # Set the content in the "Before Encoding" textbox
+            self.before_text.delete('1.0', 'end')
+            self.before_text.insert('1.0', content)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 12, column = 0)
-    
+
+            # Read the content of the file
+            with open(self.coverPath, "r") as file:
+                content = file.read()
+
+            # Set the content in the "Before Encoding" textbox
+            self.before_text.delete('1.0', 'end')
+            self.before_text.insert('1.0', content)
+
     def encode_document(self):
         # Error Handling if the User has not select a Cover File
         if self.coverPath is None:
@@ -349,19 +379,19 @@ class DocumentPage(customtkinter.CTkFrame):
             return
 
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
-
+        message = self.key_message.get('1.0', 'end-1c')
         if ext == ".docx":
             if self.switch.get() == "off":
                 pass
             else:
                 try:
-                    message = self.key_message.get('1.0', 'end-1c')
-                    if enc.has_repeating_characters(message):
-                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                        return
-                    else:
-                        self.payloadText = enc.encryptMessage(self.payloadText, message)
-                        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+                    if(len(message) > 0):
+                        if(enc.has_repeating_characters(message)):
+                            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                            return
+                        else:
+                            self.payloadText = enc.encryptMessage(self.payloadText, message)
+                    self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
                 except ValueError as e:
                     messagebox.showerror("Error", str(e))
                     return
@@ -377,13 +407,13 @@ class DocumentPage(customtkinter.CTkFrame):
             self.save_as(ext, secret = self.payloadText)
         elif ext == ".xlsx":
             try:
-                message = self.key_message.get('1.0', 'end-1c')
-                if(enc.has_repeating_characters(message)):
-                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                    return
-                else:
-                    self.payloadText = enc.encryptMessage(self.payloadText , message)
-                    self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+                if(len(message) > 0):
+                    if(enc.has_repeating_characters(message)):
+                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                        return
+                    else:
+                        self.payloadText = enc.encryptMessage(self.payloadText , message)
+                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
             except ValueError as e:
                 messagebox.showerror("Error", str(e))
                 return
@@ -396,15 +426,20 @@ class DocumentPage(customtkinter.CTkFrame):
             return
         
         _, ext = os.path.splitext(self.coverPath)
+        message = self.key_message.get('1.0', 'end-1c')
         if ext == ".docx":
             if self.switch.get() == "on":
-                text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
+                # text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
                 # text = wds.findParagraph(self.coverPath)
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
         elif ext == ".txt":
             text = dms.decode(self.coverPath)
-            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if(len(message) > 0):
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
             if text == 0:
                 messagebox.showerror("Error", "Wrong Key")
                 return
@@ -426,8 +461,8 @@ class DocumentPage(customtkinter.CTkFrame):
             if filename.endswith(('.txt')):
                 dms.encode(self.coverPath, filename, secret)
                 print("\nEncoded the data successfully in the document file")
-            elif filename.endswith(('.docx')):
-                wd_lsb_s.save(filename, self.encoded)
+            # elif filename.endswith(('.docx')):
+                # wd_lsb_s.save(filename, self.encoded)
             elif filename.endswith(('.xlsx')):
                 xls.save(filename, self.encoded)
     
@@ -437,6 +472,7 @@ class AudioPage(customtkinter.CTkFrame):
 
         self.grid_columnconfigure((0, 1), weight = 1)
         self.coverPath = None
+        self.audio = None
 
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
@@ -446,7 +482,7 @@ class AudioPage(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 2, column = 0, padx = 20, pady= 10, columnspan = 2)
-        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Document here to upload", command = self.cover_on_change)
+        self.upload_button = customtkinter.CTkButton(self, text = "Click here or Drop an Audio here to upload", command = self.cover_on_change)
         self.upload_button.grid(row = 3, column = 0, padx = 20, pady = 10, sticky = "ew", columnspan = 2)
         self.upload_button.drop_target_register(DND_FILES)
         self.upload_button.dnd_bind("<<Drop>>", self.cover_on_drop)
@@ -467,17 +503,34 @@ class AudioPage(customtkinter.CTkFrame):
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Audio", command = self.decode_audio)
         self.decode_button.grid(row = 8, column = 1, padx = 20, pady = 10)
 
+        self.play_button = customtkinter.CTkButton(self, text = "Play Audio", font = customtkinter.CTkFont(size = 20, weight = "bold"), command = self.play_audio)
+        self.play_button.grid(row = 9, column = 0, padx = 20, pady = 10, columnspan = 1)
+
+        self.stop_button = customtkinter.CTkButton(self, text = "Stop Audio", font = customtkinter.CTkFont(size = 20, weight = "bold"), command = self.stop_audio)
+        self.stop_button.grid(row = 9, column = 1, padx = 20, pady = 10, columnspan = 1)
+
+    def play_audio(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "No audio file is uploaded")
+            return
+        self.audio = vlc.MediaPlayer(self.coverPath)
+        self.audio.play()
+
+    def stop_audio(self):
+        if self.audio is not None:
+            self.audio.stop()
+
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 9, column = 0)
+            self.success_label.grid(row = 10, column = 0)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*' + key) for key in supported_types.keys()])
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 9, column = 0)
+            self.success_label.grid(row = 10, column = 0)
 
     def encode_audio(self):
         if self.coverPath is None:
@@ -491,13 +544,14 @@ class AudioPage(customtkinter.CTkFrame):
         
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         message = self.key_message.get('1.0', 'end-1c')
-        if(enc.has_repeating_characters(message)):
-            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-            return
-        else:
-            self.payloadText = enc.encryptMessage(self.payloadText , message)
-            self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
-            self.save_as(ext)
+        if(len(message) > 0):
+            if(enc.has_repeating_characters(message)):
+                messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                return
+            else:
+                self.payloadText = enc.encryptMessage(self.payloadText , message)
+        self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText)
+        self.save_as(ext)
 
     def decode_audio(self):
         if self.coverPath is None:
@@ -505,7 +559,13 @@ class AudioPage(customtkinter.CTkFrame):
             return
         try:
             text = auds.decode_aud_data(self.coverPath)
-            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            message = self.key_message.get('1.0', 'end-1c')
+            if(len(message) > 0):
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                else:
+                    text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
             if text == 0:
                 messagebox.showerror("Error", "Wrong Key")
                 return
@@ -547,6 +607,9 @@ class VideoPage(customtkinter.CTkFrame):
         self.grid_columnconfigure((0, 1), weight = 1)
 
         self.coverPath = None
+        self.encoded_video_name = None
+        self.cover_player = None
+        self.encoded_player = None
 
         self.back_button = customtkinter.CTkButton(self, text = "Back", command = lambda: controller.show_frame(MainMenu))
         self.back_button.grid(row = 0, column = 0, columnspan = 2, padx = 20, pady = 10)
@@ -590,17 +653,65 @@ class VideoPage(customtkinter.CTkFrame):
         self.decode_button = customtkinter.CTkButton(self, text = "Decode Video", command = self.decode_video)
         self.decode_button.grid(row = 11, column = 1, padx = 20, pady = 10)
 
+        self.cover_video = customtkinter.CTkButton(self, text = "Play Cover Video", command = self.play_cover_video)
+        self.cover_video.grid(row = 12, column = 0, padx = 20, pady = 10)
+
+        self.encoded_video = customtkinter.CTkButton(self, text = "Play Encoded Video", command = self.play_encoded_video)
+        self.encoded_video.grid(row = 12, column = 1, padx = 20, pady = 10)
+
+        self.cover_video = customtkinter.CTkButton(self, text = "Stop Cover Video", command = self.stop_cover_video)
+        self.cover_video.grid(row = 13, column = 0, padx = 20, pady = 10)
+
+        self.cover_video = customtkinter.CTkButton(self, text = "Stop Encoded Video", command = self.stop_encoded_video)
+        self.cover_video.grid(row = 13, column = 1, padx = 20, pady = 10)
+
+    def play_cover_video(self):
+        if self.coverPath is None:
+            messagebox.showerror("Error", "No Cover Video Added")
+            return
+        self.vlc_instance_cover = vlc.Instance()
+        self.cover_player = self.vlc_instance_cover.media_player_new()
+        self.cover_media = self.vlc_instance_cover.media_new(self.coverPath)
+        self.cover_player.set_media(self.cover_media)
+        self.cover_player.play()
+    
+    def play_encoded_video(self):
+        if self.encoded_video_name is None:
+            messagebox.showerror("Error", "No Encoded Video Added")
+            return
+        self.vlc_instance_encoded = vlc.Instance()
+        self.encoded_player = self.vlc_instance_encoded.media_player_new()
+        self.encoded_media = self.vlc_instance_encoded.media_new(self.encoded_video_name)
+        self.encoded_player.set_media(self.encoded_media)
+        self.encoded_player.play()
+
+    def stop_cover_video(self):
+        if self.coverPath is None or self.cover_player is None:
+            messagebox.showerror("Error", "No Cover Video Added")
+            return
+        self.cover_player.release()
+    
+    def stop_encoded_video(self):
+        if self.encoded_video_name is None or self.encoded_player is None:
+            messagebox.showerror("Error", "No Encoded Video Added")
+            return
+        self.encoded_player.release()
+
+    
+
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, supported_types)
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            self.success_label.grid(row = 14, column = 0)
     
     def cover_on_change(self):
         self.coverPath = get_path(['', '*' + key] for key in supported_types.keys())
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
-            self.success_label.grid(row = 12, column = 0)
+            self.success_label.grid(row = 14, column = 0)
+
+
     
     def encode_video(self):
         if self.coverPath is None:
@@ -610,15 +721,18 @@ class VideoPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if (len(self.secret_message.get('1.0', 'end-1c')) == 0):
             messagebox.showerror("Error", "Please enter a secret message")
+            return
+
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         try:
             message = self.key_message.get('1.0', 'end-1c')
-            if(enc.has_repeating_characters(message)):
-                messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                return
-            else:
-                self.payloadText = enc.encryptMessage(self.payloadText , message)
-                supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
+            if(len(message) > 0):
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                else:
+                    self.payloadText = enc.encryptMessage(self.payloadText , message)
+            supported_types[ext.lower()][0](self.coverPath, self.payloadText, self.frame_option.get(), self.bits_option_menu.get())
         except ValueError as e:
             messagebox.showerror("Error", str(e))
             vids.clean_tmp()
@@ -636,8 +750,14 @@ class VideoPage(customtkinter.CTkFrame):
         
         _, ext = os.path.splitext(self.coverPath)
         try:
+            message = self.key_message.get('1.0', 'end-1c')
             text = supported_types[ext.lower()][1](self.coverPath, self.frame_option.get(), self.bits_option_menu.get())
-            text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+            if(len(message) > 0):
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                else:
+                    text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
             if text == 0:
                 messagebox.showerror("Error", "Wrong Key")
                 return
@@ -653,6 +773,7 @@ class VideoPage(customtkinter.CTkFrame):
         if filename:
             if filename.endswith(('.mp4')):
                 vids.save_as(filename)
+                self.encoded_video_name = filename
 
 
 
@@ -662,7 +783,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.TkdndVersion = TkinterDnD._require(self)
 
         self.title("I am a stegosaurus")
-        self.geometry("500x900")
+        self.geometry("500x950")
 
         container = customtkinter.CTkFrame(master=self)
         container.pack(side = "top", fill = "both", expand = True)
