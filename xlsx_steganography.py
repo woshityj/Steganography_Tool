@@ -13,17 +13,16 @@ def encode(path, msg, bit):
     max_length = (sheet.max_row-1) * sheet.max_column * bit
     if length > max_length:
         raise ValueError(f"[!] Message length ({length}) exceeded {max_length}, please adjust the message or bit.")
-    for row in sheet.iter_rows(min_row=2):
+    for row in sheet.iter_rows():
         if index >= length:
             break
         for cell in row:
             if index < length:
                 # get current color and fill type
-                if cell.font.color is None:
-                    font = '00000000'
-                else:
-                    font = cell.font.color.rgb
-                binary_fill = bin(int(font, 16))[2:].zfill(8)
+                try:
+                    binary_fill = bin(int(cell.font.color.rgb, 16))[2:].zfill(8)
+                except TypeError:
+                    binary_fill = '00000000'
                 data = ""
                 for b in range(bit):
                     if index < length:
@@ -44,7 +43,7 @@ def decode(path, bit):
     sheet = wb.active
     binary_msg = ""
     msg = ""
-    for row in sheet.iter_rows(min_row=2):
+    for row in sheet.iter_rows():
         for cell in row:
             try:
                 color = cell.font.color.rgb
