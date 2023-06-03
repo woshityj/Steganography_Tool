@@ -21,6 +21,7 @@ import word_steganography as wd_lsb_s
 import xlsx_steganography as xls
 import encrypt as enc
 
+
 supported_types = {
     '.png': (ims.png_encode, ims.png_decode),
     '.gif': (gis.gif_encode, gis.gif_decode),
@@ -387,7 +388,7 @@ class DocumentPage(customtkinter.CTkFrame):
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text="Successfully uploaded file")
             self.success_label.grid(row=13, column=0)
-
+            content = ""
             # Read the content of the file
             _, ext = os.path.splitext(self.coverPath)
             if ext.lower() == '.docx':
@@ -409,6 +410,7 @@ class DocumentPage(customtkinter.CTkFrame):
 
             # Read the content of the file
             _, ext = os.path.splitext(self.coverPath)
+            content = ""
             if ext.lower() == '.docx':
                 doc = docx.Document(self.coverPath)
                 content = [p.text for p in doc.paragraphs]
@@ -511,9 +513,9 @@ class DocumentPage(customtkinter.CTkFrame):
                         messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
                         return
                     text = enc.decryptMessage(text, self.key_message.get('1.0', 'end-1c'))
-                if text == 0:
-                    messagebox.showerror("Error", "Wrong Key")
-                    return
+                    if text == 0:
+                        messagebox.showerror("Error", "Wrong Key")
+                        return
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
         elif ext == ".txt":
@@ -523,9 +525,9 @@ class DocumentPage(customtkinter.CTkFrame):
                     messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
                     return
                 text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
-            if text == 0:
-                messagebox.showerror("Error", "Wrong Key")
-                return
+                if text == 0:
+                    messagebox.showerror("Error", "Wrong Key")
+                    return
             self.secret_message.delete('1.0', tk.END)
             self.secret_message.insert('1.0', text)
         elif ext == ".xlsx":
@@ -534,6 +536,14 @@ class DocumentPage(customtkinter.CTkFrame):
             except ValueError as e: 
                 messagebox.showerror("Error", str(e))
                 return
+            if(len(message) > 0):
+                if(enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                    return
+                text = enc.decryptMessage(text , self.key_message.get('1.0', 'end-1c'))
+                if text == 0:
+                    messagebox.showerror("Error", "Wrong Key")
+                    return
             self.secret_message.delete('1.0', tk.END)
             self.secret_message.insert('1.0', text)
     
@@ -827,7 +837,7 @@ class VideoPage(customtkinter.CTkFrame):
     
 
     def cover_on_drop(self, event):
-        self.coverPath = get_drop(event, '.mp4')
+        self.coverPath = get_drop(event, ('', '.mp4'))
         if self.coverPath is not None:
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 15, column = 0)
@@ -842,7 +852,7 @@ class VideoPage(customtkinter.CTkFrame):
     
     def encode_video(self):
         if self.coverPath is None:
-            messagebox.showerror("Error", "Pleae select or drop a cover item first!")
+            messagebox.showerror("Error", "Please select or drop a cover item first!")
             return
         
         _, ext = os.path.splitext(self.coverPath)

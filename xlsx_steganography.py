@@ -17,10 +17,14 @@ def encode(path, msg, bit):
         if index >= length:
             break
         for cell in row:
+
             if index < length:
                 # get current color and fill type
                 try:
-                    binary_fill = bin(int(cell.font.color.rgb, 16))[2:].zfill(8)
+                    if(cell.font.color == None):
+                        binary_fill = '00000000'
+                    else:
+                        binary_fill = bin(int(cell.font.color.rgb, 16))[2:].zfill(8)
                 except TypeError:
                     binary_fill = '00000000'
                 data = ""
@@ -61,20 +65,3 @@ def decode(path, bit):
 def save(path, wb):
     if wb:
         wb.save(path)
-
-
-# save('testingfiles/out.xlsx', encode('testingfiles/SampleData.xlsx', """
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# hello world
-# """, 4))
-# print(decode('testingfiles/out.xlsx', 4))
