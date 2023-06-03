@@ -7,7 +7,7 @@ def png_encode(image_name, secret_data, lsb_bits):
     # read the image
     image = cv2.imread(image_name)
     # maximum bytes to encode
-    n_bytes = image.shape[0] * image.shape[1] * 3 // 8
+    n_bytes = image.shape[0] * image.shape[1] * 3 // (8 - lsb_bits)
     print("[*] Maximum bytes to encode:", n_bytes)
     if len(secret_data) > n_bytes:
         raise ValueError("[!] Insufficient bytes, need bigger image or less data.")
