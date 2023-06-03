@@ -19,6 +19,8 @@ def hiddenParagraphTest(filepath, text):
     r.text = text
     r.font.hidden = False
 
+    return d
+
     #p = d.add_paragraph("Visible")
     d.save(filepath)
 

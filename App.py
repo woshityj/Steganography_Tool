@@ -16,7 +16,7 @@ import document_steganography as dms
 import audio_steganography as auds
 import gif_steganography as gis
 import video_steganography as vids
-# import word_doc_steganography as wds
+import word_doc_steganography as wds
 import word_steganography as wd_lsb_s
 import xlsx_steganography as xls
 import encrypt as enc
@@ -435,7 +435,18 @@ class DocumentPage(customtkinter.CTkFrame):
         message = self.key_message.get('1.0', 'end-1c')
         if ext == ".docx":
             if self.switch.get() == "off":
-                pass
+                try:
+                    if (len(message) > 0):
+                        if (enc.has_repeating_characters(message)):
+                            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                            return
+                        else:
+                            self.payloadText = enc.encryptMessage(self.payloadText, message)
+                    self.encoded_doc = wds.hiddenParagraphTest(self.coverPath, self.payloadText)
+                    self.save_as(ext)
+                except ValueError as e:
+                    messagebox.showerror("Error", str(e))
+                    return
             else:
                 try:
                     if(len(message) > 0):
@@ -483,7 +494,26 @@ class DocumentPage(customtkinter.CTkFrame):
         if ext == ".docx":
             if self.switch.get() == "on":
                 text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
-                # text = wds.findParagraph(self.coverPath)
+                if (len(message) > 0):
+                    if (enc.has_repeating_characters(message)):
+                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                        return
+                    text = enc.decryptMessage(text, self.key_message.get('1.0', 'end-1c'))
+                if text == 0:
+                    messagebox.showerror("Error", "Wrong Key")
+                    return
+                self.secret_message.delete('1.0', tk.END)
+                self.secret_message.insert('1.0', text)
+            else:
+                text = wds.findParagraph(self.coverPath)
+                if (len(message) > 0):
+                    if (enc.has_repeating_characters(message)):
+                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                        return
+                    text = enc.decryptMessage(text, self.key_message.get('1.0', 'end-1c'))
+                if text == 0:
+                    messagebox.showerror("Error", "Wrong Key")
+                    return
                 self.secret_message.delete('1.0', tk.END)
                 self.secret_message.insert('1.0', text)
         elif ext == ".txt":
@@ -514,8 +544,10 @@ class DocumentPage(customtkinter.CTkFrame):
             if filename.endswith(('.txt')):
                 dms.encode(self.coverPath, filename, secret)
                 print("\nEncoded the data successfully in the document file")
-            elif filename.endswith(('.docx')):
+            elif filename.endswith(('.docx')) and self.switch.get() == "on":
                 wd_lsb_s.save(filename, self.encoded)
+            elif filename.endswith(('.docx')) and self.switch.get() == "off":
+                self.encoded_doc.save(filename)
             elif filename.endswith(('.xlsx')):
                 xls.save(filename, self.encoded)
     
