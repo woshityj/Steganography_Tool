@@ -6,3 +6,6 @@ customtkinter==5.1.3
 pillow==9.5.0
 openpyxl==3.1.2
 docx==0.2.4
+tkvideoplayer==2.3
+python-vlc==3.0.18122
+python-docx==0.8.11
