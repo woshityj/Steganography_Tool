@@ -329,9 +329,9 @@ class DocumentPage(customtkinter.CTkFrame):
         self.bits_option_menu = customtkinter.CTkOptionMenu(self, values = ["1", "2", "3", "4", "5"])
         self.bits_option_menu.grid(row = 4, column = 0, padx = 20, pady = (10, 10))
 
-        switch_var = customtkinter.StringVar(value = "on")
-        self.switch = customtkinter.CTkSwitch(self, text = "Vanishing Steganograpy (Off)\nLSB Steganography (On)", variable = switch_var, onvalue = "on", offvalue="off")
-        self.switch.grid(row = 4, column = 1, padx = 20, pady = 10)
+        # switch_var = customtkinter.StringVar(value = "on")
+        # self.switch = customtkinter.CTkSwitch(self, text = "Vanishing Steganograpy (Off)\nLSB Steganography (On)", variable = switch_var, onvalue = "on", offvalue="off")
+        # self.switch.grid(row = 4, column = 1, padx = 20, pady = 10)
 
         self.label = customtkinter.CTkLabel(self, text="Cover", font = customtkinter.CTkFont(size = 20))
         self.label.grid(row = 5, column = 0, padx = 20, pady= 10, columnspan = 2)
@@ -434,34 +434,18 @@ class DocumentPage(customtkinter.CTkFrame):
         self.payloadText = self.secret_message.get('1.0', 'end-1c')
         message = self.key_message.get('1.0', 'end-1c')
         if ext == ".docx":
-            if self.switch.get() == "off":
-                try:
-                    if (len(message) > 0):
-                        if (enc.has_repeating_characters(message)):
-                            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                            return
-                        else:
-                            self.payloadText = enc.encryptMessage(self.payloadText, message)
-                    self.encoded_doc = wds.hiddenParagraphTest(self.coverPath, self.payloadText)
-                    self.save_as(ext)
-                except ValueError as e:
-                    messagebox.showerror("Error", str(e))
-                    return
-            else:
-                try:
-                    if(len(message) > 0):
-                        if(enc.has_repeating_characters(message)):
-                            messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                            return
-                        else:
-                            self.payloadText = enc.encryptMessage(self.payloadText, message)
-                    self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
-                except ValueError as e:
-                    messagebox.showerror("Error", str(e))
-                    return
-                self.save_as(ext)
-            pass
-            # wds.hiddenParagraphTest(self.coverPath, self.payloadText)
+            try:
+                if(len(message) > 0):
+                    if(enc.has_repeating_characters(message)):
+                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
+                        return
+                    else:
+                        self.payloadText = enc.encryptMessage(self.payloadText, message)
+                self.encoded = supported_types[ext.lower()][0](self.coverPath, self.payloadText, int(self.bits_option_menu.get()))
+            except ValueError as e:
+                messagebox.showerror("Error", str(e))
+                return
+            self.save_as(ext)
         elif ext == ".txt":
             # Error Handling if the Secret can fit into the Cover File
             max_no_of_bytes = dms.max_number_of_bytes(self.coverPath)
@@ -492,30 +476,17 @@ class DocumentPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         message = self.key_message.get('1.0', 'end-1c')
         if ext == ".docx":
-            if self.switch.get() == "on":
-                text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
-                if (len(message) > 0):
-                    if (enc.has_repeating_characters(message)):
-                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                        return
-                    text = enc.decryptMessage(text, self.key_message.get('1.0', 'end-1c'))
-                if text == 0:
-                    messagebox.showerror("Error", "Wrong Key")
+            text = wd_lsb_s.decode(self.coverPath, int(self.bits_option_menu.get()))
+            if (len(message) > 0):
+                if (enc.has_repeating_characters(message)):
+                    messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
                     return
-                self.secret_message.delete('1.0', tk.END)
-                self.secret_message.insert('1.0', text)
-            else:
-                text = wds.findParagraph(self.coverPath)
-                if (len(message) > 0):
-                    if (enc.has_repeating_characters(message)):
-                        messagebox.showerror("Error", "Secret key has repeating characters, please use a unique string sequence")
-                        return
-                    text = enc.decryptMessage(text, self.key_message.get('1.0', 'end-1c'))
-                if text == 0:
-                    messagebox.showerror("Error", "Wrong Key")
-                    return
-                self.secret_message.delete('1.0', tk.END)
-                self.secret_message.insert('1.0', text)
+                text = enc.decryptMessage(text, self.key_message.get('1.0', 'end-1c'))
+            if text == 0:
+                messagebox.showerror("Error", "Wrong Key")
+                return
+            self.secret_message.delete('1.0', tk.END)
+            self.secret_message.insert('1.0', text)
         elif ext == ".txt":
             text = dms.decode(self.coverPath)
             if(len(message) > 0):
@@ -544,10 +515,8 @@ class DocumentPage(customtkinter.CTkFrame):
             if filename.endswith(('.txt')):
                 dms.encode(self.coverPath, filename, secret)
                 print("\nEncoded the data successfully in the document file")
-            elif filename.endswith(('.docx')) and self.switch.get() == "on":
+            elif filename.endswith(('.docx')):
                 wd_lsb_s.save(filename, self.encoded)
-            elif filename.endswith(('.docx')) and self.switch.get() == "off":
-                self.encoded_doc.save(filename)
             elif filename.endswith(('.xlsx')):
                 xls.save(filename, self.encoded)
     
