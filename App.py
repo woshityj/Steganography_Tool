@@ -281,7 +281,7 @@ class ImagePage(customtkinter.CTkFrame):
             self.after_cancel(self.encoded_gif_after_id)
             self.encoded_gif_after_id = None
         if filename:
-            if filename.endswith(('.png', '.jpg', '.jpeg')):
+            if filename.endswith('.png'):
                 # save image
                 cv2.imwrite(filename, self.encoded)
                 # show image as per requested in spec
@@ -289,14 +289,14 @@ class ImagePage(customtkinter.CTkFrame):
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
                 self.encoded_image_label.bind("<Double-Button-1>", lambda event: open_img(filename, self.encoded))
                 self.encoded_image_label.grid(row = 14, column = 1)
-            elif filename.endswith(('.bmp')):
+            elif filename.endswith('.bmp'):
                 # save image
                 with open(filename, "wb") as image:
                     image.write(self.encoded)
                 # show image as per requested in spec
                 self.encoded_image = customtkinter.CTkImage(Image.open(filename), size = (100, 100))
                 self.encoded_image_label = customtkinter.CTkLabel(self, image = self.encoded_image, text = "")
-                self.encoded_image_label.bind("<Double-Button-1>", lambda event: open_img(filename, self.encoded))
+                self.encoded_image_label.bind("<Double-Button-1>", lambda event: open_img(filename, cv2.imread(filename)))
                 self.encoded_image_label.grid(row = 14, column = 1)
             elif filename.endswith('.gif'):
                 gis.gif_save(self.encoded, filename)
@@ -665,7 +665,7 @@ class AudioPage(customtkinter.CTkFrame):
 
     def save_as(self, ext, secret = None):
         # save as prompt
-        filename = asksaveasfilename(defaultextension='wav', filetypes=[("Same as original", 'wav'), ("All Files", "*.*")])
+        filename = asksaveasfilename(defaultextension=ext, filetypes=[("Same as original", ext), ("All Files", "*.*")])
         if filename:
             if filename.endswith(('.wav')) and ext != ".mp3":
                 song = wave.open(self.coverPath, mode = 'rb')
@@ -676,13 +676,13 @@ class AudioPage(customtkinter.CTkFrame):
             elif ext == ".mp3":
                 _, ext = os.path.splitext(filename)
                 song_params = auds.get_song_parameters(self.coverPath)
-                with wave.open(filename, 'wb') as fd:
+                with wave.open(filename[:-3] + "wav", 'wb') as fd:
                     fd.setparams(song_params)
                     fd.writeframes(self.encoded)
                     print("\nEncoded the data successfully in the audio file")
-                auds.convertWAVToMP3(filename)
+                auds.convertWAVToMP3(filename[:-3] + "wav")
                 # Remove temporary WAV file
-                os.remove(filename)
+                os.remove(filename[:-3] + "wav")
                 auds.clean_tmp()
 
 class VideoPage(customtkinter.CTkFrame):
