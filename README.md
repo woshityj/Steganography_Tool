@@ -11,8 +11,8 @@ pip install -r requirements.txt
 # Project Requirement Milestone
 ## File formats
 1. Images (png, bmp, gif)✅ 
-2. Audio (wav)✅ mp4 (WIP)
-3. Document (txt)✅ xls, doc (WIP)
+2. Audio (wav, mp3, mp4)✅ 
+3. Document (txt, xlsx, docx)✅ 
 
 ## Features
 1. Image LSB (1-5 bit encoding)✅
@@ -32,7 +32,7 @@ Password encryption
 Multi-File stegnographic encoding
 
 ## Richie
-GUI, gif format support
+GUI, gif, docx, xlsx format support
 
 ## Cliff
 Add additional file format support
