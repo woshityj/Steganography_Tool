@@ -82,27 +82,41 @@ def png_decode(image_name, lsb_bits):
     return decoded_data[:-5]
 
 def bmp_encode(image_path, data, lsb_bits):
+    print("Encoding...")
+    total = []
     # Open the file in binary mode
     with open(image_path, "rb") as image:
         f = image.read()
         byte_array = bytearray(f)
-
     # Convert data to binary
     data_binary = ''.join(format(ord(i), '08b') for i in data)
     data_len = format(len(data_binary), '08b')
 
     # Append the size of data to the start of data_binary
     data_binary = data_len + data_binary
+    
+    binary_number = data_binary.zfill((len(data_binary) // lsb_bits) * lsb_bits)
+    # Iterate over the binary number in steps of 3 and print each group
+    for i in range(0, len(binary_number), lsb_bits):
+        groups = binary_number[i:i+lsb_bits]
+        bits = [bit for bit in groups]
+        total.append(bits)
 
-    hidden_bits = 255 - lsb_bits
+    count = 0
     # Append data_binary to image bytes
-    for i in range(len(data_binary)):
-        byte_array[i+54] = (byte_array[i+54] & hidden_bits) | int(data_binary[i])  # 54 bytes is standard BMP header
+    for i in range(len(total)-1):
+        for k in range(lsb_bits):
+            working = 54+((i+1)*8)-lsb_bits+(k+1)
+            if (count < 8):
+                count += 1
+            byte_array[working] = (byte_array[working] & 1) | int(total[i][k])  # 54 bytes is standard BMP header
 
     return byte_array
 
 
 def bmp_decode(image_path, lsb_bits):
+    print("Decoding...")
+    loop = int(round(8/lsb_bits,0))
     # Open the file in binary mode
     with open(image_path, "rb") as image:
         f = image.read()
@@ -110,20 +124,25 @@ def bmp_decode(image_path, lsb_bits):
 
     # Extract the size of original hidden data
     len_str = ""
-    for i in range(8):
-        if byte_array[i+54] & lsb_bits:
-            len_str += '1'
-        else:
-            len_str += '0'
+    for i in range(loop):
+        for j in range(lsb_bits):
+            working = 54+((i+1)*8)-lsb_bits+(j+1)
+            if byte_array[working] & 1:
+                len_str += '1'
+            else:
+                len_str += '0'
     data_len = int(len_str, 2)
 
+    loop2 = int(round(data_len/lsb_bits,0))
     # Extract data
     data_binary = ""
-    for i in range(data_len):
-        if byte_array[i+54+8] & lsb_bits:
-            data_binary += '1'
-        else:
-            data_binary += '0'
+    for i in range(loop2):
+        for j in range(lsb_bits):
+            working = 54+((i+1)*8)-lsb_bits+(j+1)+(loop*8)
+            if byte_array[working] & 1:
+                data_binary += '1'
+            else:
+                data_binary += '0'
 
     # Convert binary data to string
     data_str = "".join(chr(int(data_binary[i:i+8], 2)) for i in range(0, len(data_binary), 8))
