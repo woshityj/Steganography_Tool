@@ -88,6 +88,9 @@ def play_gif(fn, frames, label, duration, imagepage):
         label.configure(image=f)
         return imagepage.after(duration, lambda : play_gif(fn, frames, label, duration, imagepage))
 
+def clear_text(textarea):
+    textarea.delete('1.0', tk.END)
+
 class GifWindow(tk.Toplevel):
     def __init__(self, master, path):
         super().__init__(master = master)
@@ -171,7 +174,7 @@ class ImagePage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def txt_on_change(self):
@@ -179,17 +182,19 @@ class ImagePage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, ('.png', '.bmp', '.gif'))
         if self.coverPath is not None:
+            clear_text(self.secret_message)
             self.show(self.coverPath)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*.png'), ('', '*.bmp'), ('', '*.gif')])
         if self.coverPath is not None:
+            clear_text(self.secret_message)
             self.show(self.coverPath)
 
     def show(self, coverPath):
@@ -266,7 +271,7 @@ class ImagePage(customtkinter.CTkFrame):
             if text == 0:
                 messagebox.showerror("Error", "Wrong Key")
                 return
-        self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
         self.secret_message.insert('1.0', text)
 
         # if self.encoded_image_label is not None:
@@ -372,7 +377,7 @@ class DocumentPage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def txt_on_change(self):
@@ -380,7 +385,7 @@ class DocumentPage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def cover_on_drop(self, event):
@@ -399,7 +404,8 @@ class DocumentPage(customtkinter.CTkFrame):
                     content = f.read()
 
             # Set the content in the "Before Encoding" textbox
-            self.before_text.delete('1.0', 'end')
+            clear_text(self.secret_message)
+            clear_text(self.before_text)
             self.before_text.insert('1.0', content)
 
     def cover_on_change(self):
@@ -419,7 +425,8 @@ class DocumentPage(customtkinter.CTkFrame):
                     content = f.read()
 
             # Set the content in the "Before Encoding" textbox
-            self.before_text.delete('1.0', 'end')
+            clear_text(self.secret_message)
+            clear_text(self.before_text)
             self.before_text.insert('1.0', content)
 
     def encode_document(self):
@@ -487,7 +494,7 @@ class DocumentPage(customtkinter.CTkFrame):
             if text == 0:
                 messagebox.showerror("Error", "Wrong Key")
                 return
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', text)
         elif ext == ".txt":
             text = dms.decode(self.coverPath)
@@ -499,7 +506,7 @@ class DocumentPage(customtkinter.CTkFrame):
                 if text == 0:
                     messagebox.showerror("Error", "Wrong Key")
                     return
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', text)
         elif ext == ".xlsx":
             try:
@@ -515,7 +522,7 @@ class DocumentPage(customtkinter.CTkFrame):
                 if text == 0:
                     messagebox.showerror("Error", "Wrong Key")
                     return
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', text)
     
     def save_as(self, ext, secret = None):
@@ -583,7 +590,7 @@ class AudioPage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def txt_on_change(self):
@@ -591,7 +598,7 @@ class AudioPage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def play_audio(self):
@@ -608,12 +615,14 @@ class AudioPage(customtkinter.CTkFrame):
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, ('.wav', '.mp3'))
         if self.coverPath is not None:
+            clear_text(self.secret_message)
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 11, column = 0)
 
     def cover_on_change(self):
         self.coverPath = get_path([('', '*.wav'), ('', '*.mp3')])
         if self.coverPath is not None:
+            clear_text(self.secret_message)
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 11, column = 0)
 
@@ -660,7 +669,7 @@ class AudioPage(customtkinter.CTkFrame):
         _, ext = os.path.splitext(self.coverPath)
         if ext == ".mp3":
             auds.clean_tmp()
-        self.secret_message.delete('1.0', tk.END)
+        clear_text(self.secret_message)
         self.secret_message.insert('1.0', text)
 
     def save_as(self, ext, secret = None):
@@ -760,7 +769,7 @@ class VideoPage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def txt_on_change(self):
@@ -768,7 +777,7 @@ class VideoPage(customtkinter.CTkFrame):
         if self.txtPath is not None:
             with open(self.txtPath) as f:
                 contents = f.read()
-            self.secret_message.delete('1.0', tk.END)
+            clear_text(self.secret_message)
             self.secret_message.insert('1.0', contents)
 
     def play_cover_video(self):
@@ -808,12 +817,14 @@ class VideoPage(customtkinter.CTkFrame):
     def cover_on_drop(self, event):
         self.coverPath = get_drop(event, ('', '.mp4'))
         if self.coverPath is not None:
+            clear_text(self.secret_message)
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 15, column = 0)
     
     def cover_on_change(self):
         self.coverPath = get_path([('', '*.mp4')])
         if self.coverPath is not None:
+            clear_text(self.secret_message)
             self.success_label = customtkinter.CTkLabel(self, text = "Successfully uploaded file")
             self.success_label.grid(row = 15, column = 0)
 
@@ -871,7 +882,7 @@ class VideoPage(customtkinter.CTkFrame):
             messagebox.showerror("Error", str(e))
             vids.clean_tmp()
             return
-        self.secret_message.delete('1.0', tk.END)
+        clear_text(self.secret_message)
         self.secret_message.insert('1.0', text)
 
     def save_as(self, ext):
