@@ -46,8 +46,7 @@ def get_path(filetype):
 
 def get_drop(event, filetype):
     file_path = event.data
-    if file_path.endswith('}'):
-        file_path = file_path.removeprefix('{').removesuffix('}')
+    file_path = file_path.removeprefix('{').removesuffix('}')
     if os.path.isfile(file_path):
         _, ext = os.path.splitext(file_path)
     else:
