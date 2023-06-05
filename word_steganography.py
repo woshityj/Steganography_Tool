@@ -21,14 +21,17 @@ def encode(path, msg, bit):
         if index >= length:
             break
         runs = para.runs
+        # remove the entire paragraph and rewrite them with the new color
         para.clear()
         for run in runs:
             text = run.text
+            # assume that the color is black if set to 'Automatic' which is None
             if run.font.color.rgb is not None:
                 color = to_bin(run.font.color.rgb)
             else:
                 color = ['00000000', '00000000', '00000000']
             for _, char in enumerate(text):
+                # if the index is greater than the length of the message, just add the character without changing
                 if index >= length:
                     para.add_run(char)
                     continue
@@ -53,6 +56,7 @@ def decode(path, bit):
     # for each run
     for para in docu.paragraphs:
         for run in para.runs:
+            # might have hidden runs without text, just skip them
             if run.font.color.rgb is None:
                 continue
             for c in run.font.color.rgb:
@@ -64,15 +68,8 @@ def decode(path, bit):
                         return msg[:-5]
                     binary_msg = binary_msg[8:]
 
+
 def save(path, docu):
     if docu:
         docu.save(path)
 
-
-# save("testingfiles/out.docx", encode('testingfiles/SampleWord.docx', """hello world!!
-# hello world!!
-# hello world!!
-# hello world!!
-# hello world!!
-# """, 5))
-# print(decode("testingfiles/out.docx", 5))

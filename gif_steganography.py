@@ -76,13 +76,3 @@ def gif_decode(path, bit):
 def gif_save(frames, path):
     frames[0].save(path, save_all=True, append_images=frames[1:], disposal=2, optimize=False, lossless=True)
 
-
-# # debug
-# bn = 5
-# gif_save(gif_encode("testingfiles/cat.gif", """
-# Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas vitae ultrices justo. Vivamus maximus bibendum orci
-# at hendrerit. Morbi tincidunt a nulla a commodo. Suspendisse eu nulla in risus aliquam pharetra eget a sapien.
-# Pellentesque a ante et est porta lobortis. Fusce quis fermentum ante. Aliquam scelerisque vel dui vitae accumsan.
-# """, bn), "testingfiles/encoded_cat.gif")
-#
-# print(gif_decode("testingfiles/encoded_cat.gif", bn))
