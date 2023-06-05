@@ -48,6 +48,9 @@ def get_drop(event, filetype):
     file_path = event.data
     if os.path.isfile(file_path):
         _, ext = os.path.splitext(file_path)
+    elif file_path.endswith('}') and os.path.isfile(file_path[1:-1]):
+        file_path = file_path[1:-1]
+        _, ext = os.path.splitext(file_path)
     else:
         messagebox.showerror("Error", f"Cannot open file from {file_path}")
         return
