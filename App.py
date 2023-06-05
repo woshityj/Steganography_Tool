@@ -213,19 +213,17 @@ class ImagePage(customtkinter.CTkFrame):
         if self.gif_after_id is not None:
             self.after_cancel(self.gif_after_id)
             self.gif_after_id = None
+        self.image_label.grid_forget()
+        self.gif_label.grid_forget()
         if coverPath.lower().endswith(('.png', '.bmp')):
-            self.after(0)
-            self.gif_label.grid_forget()
             self.uploaded_image = customtkinter.CTkImage(Image.open(coverPath), size=(100, 100))
             self.image_label = customtkinter.CTkLabel(self, image=self.uploaded_image, text="")
             self.image_label.bind("<Double-Button-1>", lambda event: open_img(coverPath, cv2.imread(coverPath)))
             self.image_label.grid(row=14, column=0)
-
             self.success_label = customtkinter.CTkLabel(self, text="Successfully uploaded file")
             self.success_label.grid(row=15, column=0)
 
         if coverPath.lower().endswith('.gif'):
-            self.image_label.grid_forget()
             self.gif = Image.open(coverPath)
             self.frames = [tk.PhotoImage(file=coverPath, format='gif -index %i' % i) for i in range(self.gif.n_frames)]
             self.gif_label = tk.Label(self, image=self.frames[0], text="", height=100, width=100)
