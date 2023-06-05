@@ -10,18 +10,17 @@ def encode(path, msg, bit):
     binary_msg = to_bin(msg)
     index = 0
     length = len(binary_msg)
-    max_length = (sheet.max_row-1) * sheet.max_column * bit
+    max_length = (sheet.max_row - 1) * sheet.max_column * bit
     if length > max_length:
         raise ValueError(f"[!] Message length ({length}) exceeded {max_length}, please adjust the message or bit.")
     for row in sheet.iter_rows():
         if index >= length:
             break
         for cell in row:
-
             if index < length:
-                # get current color and fill type
+                # get current color in hex and convert to binary
                 try:
-                    if(cell.font.color == None):
+                    if cell.font.color is None:
                         binary_fill = '00000000'
                     else:
                         binary_fill = bin(int(cell.font.color.rgb, 16))[2:].zfill(8)
@@ -55,6 +54,7 @@ def decode(path, bit):
                 raise ValueError("No Steganography found in Excel file")
             binary_color = bin(int(color, 16))[2:].zfill(8)
             binary_msg += binary_color[-bit:]
+            # for every character, check if it's the delimiter characters
             if len(binary_msg) >= 8:
                 msg += chr(int(binary_msg[:8], 2))
                 if msg.endswith("====="):
